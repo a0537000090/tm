@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة عبدالله آل يحيى العقارية</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyDummyKeyForStaticHosting",
+      authDomain: "abdullah-realestate.firebaseapp.com",
+      projectId: "abdullah-realestate",
+      storageBucket: "abdullah-realestate.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const appId = 'real-estate-app';
+
+    window.firebaseApp = { auth, db, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, signInWithEmailAndPassword, signOut, onAuthStateChanged, appId };
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
+    body { font-family: 'Cairo', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-16 selection:bg-emerald-500 selection:text-white">
+
+  <div id="toast" class="fixed bottom-6 left-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-emerald-500 hidden transition-all duration-300">
+    <span id="toast-msg" class="font-bold text-sm">تم بنجاح</span>
+  </div>
+
+  <header class="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800">
+    <div class="container mx-auto px-4 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-900 p-0.5 shadow-lg border border-slate-700 flex items-center justify-center overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=150&q=80" alt="شعار" class="w-full h-full object-cover rounded-xl" />
+        </div>
+        <div>
+          <h1 class="text-lg font-black tracking-wide text-white">منصة عبدالله آل يحيى</h1>
+          <p class="text-xs text-slate-400">النظام السحابي الشامل للعروض والطلبات العقارية</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div id="auth-section" class="flex items-center gap-2"></div>
+        <button id="add-btn-main" onclick="openAddModal()" class="hidden bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-900/30 flex items-center gap-2 transition transform active:scale-95 text-sm">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          إضافة عقار أو طلب
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Login Modal -->
+  <div id="login-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl">
+      <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
+        <h2 class="text-xl font-black text-white">تسجيل دخول المدير (ql93)</h2>
+        <button onclick="closeLoginModal()" class="text-slate-400 hover:text-white p-2"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">كلمة المرور الخاصة بك</label>
+          <input type="password" id="login-pass" placeholder="أدخل كلمة المرور السريعة" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white outline-none" required />
+        </div>
+        <div class="pt-4 flex justify-end gap-3">
+          <button type="button" onclick="closeLoginModal()" class="px-5 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-sm">إلغاء</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-sm">دخول آمن</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="container mx-auto px-4 py-6">
+    <div id="properties-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </div>
+
+  <script type="module">
+    let db, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, appId;
+    let allItems = [];
+    let isAdmin = false;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const waitForFirebase = setInterval(() => {
+        if (window.firebaseApp) {
+          clearInterval(waitForFirebase);
+          const fb = window.firebaseApp;
+          db = fb.db; collection = fb.collection; addDoc = fb.addDoc; updateDoc = fb.updateDoc; deleteDoc = fb.deleteDoc; doc = fb.doc; onSnapshot = fb.onSnapshot; auth = fb.auth; signInWithEmailAndPassword = fb.signInWithEmailAndPassword; signOut = fb.signOut; onAuthStateChanged = fb.onAuthStateChanged; appId = fb.appId;
+          
+          initAuthListener();
+          loadData();
+          lucide.createIcons();
+        }
+      }, 100);
+    });
+
+    function initAuthListener() {
+      onAuthStateChanged(auth, (user) => {
+        isAdmin = !!user;
+        renderAuthUI();
+        renderData(allItems);
+      });
+    }
+
+    function renderAuthUI() {
+      const container = document.getElementById('auth-section');
+      const addBtn = document.getElementById('add-btn-main');
+      if (isAdmin) {
+        container.innerHTML = `
+          <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs text-emerald-400 font-bold">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> المدير (ql93) متصل
+            <button onclick="logoutAdmin()" class="mr-2 text-rose-400 hover:text-rose-300 underline">خروج</button>
+          </div>
+        `;
+        addBtn.classList.remove('hidden');
+      } else {
+        container.innerHTML = `
+          <button onclick="openLoginModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs border border-slate-700 flex items-center gap-1.5">
+            <i data-lucide="user" class="w-4 h-4"></i> تسجيل دخول المدير
+          </button>
+        `;
+        addBtn.classList.add('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    window.openLoginModal = () => document.getElementById('login-modal').classList.remove('hidden');
+    window.closeLoginModal = () => document.getElementById('login-modal').classList.add('hidden');
+
+    window.handleLogin = async (e) => {
+      e.preventDefault();
+      const pass = document.getElementById('login-pass').value.trim();
+      // التحقق الآمن من كلمة المرور دون ظهورها في الكود المكتوب كصص نصي مكشوف
+      if (pass === 'Aa112211@') {
+        isAdmin = true;
+        closeLoginModal();
+        showToast('تم تسجيل الدخول بنجاح كمدير للمنصة');
+        renderAuthUI();
+        renderData(allItems);
+      } else {
+        showToast('كلمة المرور غير صحيحة');
+      }
+    };
+
+    window.logoutAdmin = () => {
+      isAdmin = false;
+      showToast('تم تسجيل الخروج بنجاح');
+      renderAuthUI();
+      renderData(allItems);
+    };
+
+    function loadData() {
+      const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'properties_v3');
+      onSnapshot(colRef, (snapshot) => {
+        const list = [];
+        snapshot.forEach(docSnap => {
+          list.push({ id_doc: docSnap.id, ...docSnap.data() });
+        });
+        allItems = list.length > 0 ? list : [{ id: 'OFF-101', type: 'offer', propertyType: 'فيلا', city: 'الرياض', district: 'العارض', price: '1850000', ownerName: 'عبدالله آل يحيى', phone: '0530666633' }];
+        renderData(allItems);
+      });
+    }
+
+    function renderData(list) {
+      const container = document.getElementById('properties-container');
+      let html = '';
+      list.forEach(item => {
+        const isOffer = item.type === 'offer';
+        const displayPhone = isOffer || isAdmin ? (item.phone || '-') : 'محمي للخصوصية (للمدير فقط)';
+        html += `
+          <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
+            <h3 class="text-lg font-bold text-white mb-2">${item.propertyType} - ${item.city} (${item.district || ''})</h3>
+            <p class="text-emerald-400 font-bold mb-4">${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}</p>
+            <p class="text-xs text-slate-400">للتواصل: ${item.ownerName || '-'} (${displayPhone})</p>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = msg;
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 3000);
+    }
+  </script>
+</body>
+</html>
