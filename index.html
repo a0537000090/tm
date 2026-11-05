@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة عبدالله آل يحيى العقارية</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Firebase Compat (v8 syntax) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // إعدادات الاتصال السحابي (Firebase Setup)
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "demo", projectId: "demo" };
+    
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'real-estate-app';
+
+    function App() {
+      const [user, setUser] = useState(null);
+      const [activeTab, setActiveTab] = useState('all');
+      const [searchTerm, setSearchTerm] = useState('');
+      const [filterType, setFilterType] = useState('الكل');
+      const [filterCity, setFilterCity] = useState('الكل');
+      const [filterPurpose, setFilterPurpose] = useState('الكل');
+      const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'map'
+
+      const [items, setItems] = useState([]);
+      const [notifications, setNotifications] = useState([
+        { id: 1, time: 'الآن', text: 'مرحباً بك في منصة عبدالله آل يحيى السحابية، تم تفعيل الحفظ التلقائي بنجاح' }
+      ]);
+      const [showNotifications, setShowNotifications] = useState(false);
+
+      const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+      const [addMode, setAddMode] = useState('offer'); // 'offer' | 'request'
+
+      // نموذج إضافة العرض والطلب
+      const [formData, setFormData] = useState({
+        offerType: 'بيع',
+        ownerRole: 'مالك',
+        propertyType: 'فيلا',
+        city: 'الرياض',
+        district: '',
+        street: '',
+        streetCount: 'شارع واحد',
+        streetWidth: '',
+        mapUrl: '',
+        landArea: '',
+        buildingArea: '',
+        rooms: '',
+        bathrooms: '',
+        propertyAge: '',
+        floors: '',
+        facades: [],
+        features: [],
+        otherFeatures: '',
+        dimensions: '',
+        planNumber: '',
+        plotNumber: '',
+        price: '',
+        rentIncome: '',
+        roi: '',
+        isNegotiable: 'نعم',
+        deedType: 'صك إلكتروني',
+        deedNumber: '',
+        imageUrl: '',
+        ownerName: '',
+        phone: '',
+        // الطلب
+        requestType: 'شراء',
+        requestRole: 'أنا مشتري',
+        requestPurpose: 'السكن',
+        districts: '',
+        priceMax: '',
+        isBudgetFlexible: 'نعم',
+        areaMin: '',
+        urgency: 'عاجل',
+        paymentMethod: 'نقداً',
+        details: ''
+      });
+
+      // نموذج التعديل الشامل
+      const [editingItem, setEditingItem] = useState(null);
+      const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+      const [toastMessage, setToastMessage] = useState('');
+
+      // مصادقة المستخدم أولاً
+      useEffect(() => {
+        const initAuth = async () => {
+          try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              await auth.signInWithCustomToken(__initial_auth_token);
+            } else {
+              await auth.signInAnonymously();
+            }
+          } catch (err) {
+            console.error("Auth error:", err);
+          }
+        };
+        initAuth();
+        const unsubscribe = auth.onAuthStateChanged(setUser);
+        return () => unsubscribe();
+      }, []);
+
+      // جلب البيانات من السحابة
+      useEffect(() => {
+        if (!user) return;
+        const colRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('properties_v3');
+        const unsubscribe = colRef.onSnapshot((snapshot) => {
+          const dataList = [];
+          snapshot.forEach((docSnap) => {
+            dataList.push({ id_doc: docSnap.id, ...docSnap.data() });
+          });
+          if (dataList.length > 0) {
+            setItems(dataList);
+          } else {
+            // بيانات أولية افتراضية في حال كانت القاعدة فارغة
+            setItems([
+              {
+                id: 'OFF-101',
+                type: 'offer',
+                offerType: 'بيع',
+                ownerRole: 'مالك',
+                propertyType: 'فيلا',
+                purpose: 'بيع',
+                city: 'الرياض',
+                district: 'العارض',
+                street: 'الملك فهد',
+                streetCount: 'شارعين',
+                streetWidth: '20',
+                mapUrl: 'https://maps.google.com',
+                landArea: '450',
+                buildingArea: '380',
+                rooms: '5',
+                bathrooms: '6',
+                propertyAge: 'جديد',
+                floors: '2',
+                facades: ['شمالية', 'شرقية'],
+                features: ['مصعد', 'مكيفات راكبة', 'مواقف سيارات'],
+                otherFeatures: 'دخول ذكي وحديقة خاصة',
+                dimensions: '20 في 22.5',
+                planNumber: '1420',
+                plotNumber: '88',
+                price: '1850000',
+                rentIncome: '',
+                roi: '',
+                isNegotiable: 'نعم',
+                deedType: 'صك إلكتروني',
+                deedNumber: '9876543210',
+                imageUrl: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
+                ownerName: 'عبدالله آل يحيى',
+                phone: '0500000000',
+                isFavorite: false,
+                isMine: true
+              }
+            ]);
+          }
+        }, (error) => {
+          console.error("Firestore error:", error);
+        });
+
+        return () => unsubscribe();
+      }, [user]);
+
+      // حساب العائد الاستثماري الآلي للعرض
+      useEffect(() => {
+        if (formData.price && formData.rentIncome) {
+          const p = parseFloat(formData.price);
+          const r = parseFloat(formData.rentIncome);
+          if (p > 0 && r > 0) {
+            const roiVal = ((r / p) * 100).toFixed(2);
+            setFormData(prev => ({ ...prev, roi: roiVal }));
+          }
+        }
+      }, [formData.price, formData.rentIncome]);
+
+      useEffect(() => {
+        if (editingItem && editingItem.type === 'offer' && editingItem.price && editingItem.rentIncome) {
+          const p = parseFloat(editingItem.price);
+          const r = parseFloat(editingItem.rentIncome);
+          if (p > 0 && r > 0) {
+            const roiVal = ((r / p) * 100).toFixed(2);
+            setEditingItem(prev => ({ ...prev, roi: roiVal }));
+          }
+        }
+      }, [editingItem?.price, editingItem?.rentIncome]);
+
+      // خوارزمية المطابقة الذكية المتقدمة
+      const checkMatch = (item) => {
+        if (item.type === 'offer') {
+          return items.some(req => 
+            req.type === 'request' && 
+            (req.propertyType === item.propertyType || !req.propertyType) &&
+            req.city === item.city &&
+            (!req.districts || !item.district || req.districts.includes(item.district) || item.district.includes(req.districts)) &&
+            (!req.priceMax || parseFloat(item.price) <= parseFloat(req.priceMax))
+          );
+        } else {
+          return items.some(off => 
+            off.type === 'offer' && 
+            (off.propertyType === item.propertyType || !item.propertyType) &&
+            off.city === item.city &&
+            (!item.districts || !off.district || item.districts.includes(off.district) || off.district.includes(item.districts)) &&
+            (!item.priceMax || parseFloat(off.price) <= parseFloat(item.price))
+          );
+        }
+      };
+
+      // تصدير بروشور احترافي (PDF)
+      const exportToPDF = (item) => {
+        const printWindow = window.open('', '_blank');
+        const isOffer = item.type === 'offer';
+        printWindow.document.write(`
+          <html dir="rtl">
+          <head>
+            <title>تفاصيل ${isOffer ? 'العرض' : 'الطلب'} العقاري - ${item.id}</title>
+            <style>
+              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1e293b; background: #fff; }
+              .header { text-align: center; border-bottom: 3px solid #10b981; padding-bottom: 20px; margin-bottom: 30px; }
+              .title { color: #0f172a
