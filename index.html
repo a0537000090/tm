@@ -1,10 +1,3 @@
-عذراً على التأخير. يبدو أن زر تسجيل الدخول عبر جوجل لا يزال لا يظهر في موقعك المرفوع على جيت هاب `[https://a0537000090.github.io/tm/](https://a0537000090.github.io/tm/)`.
-
-لحل هذه المشكلة، سنقوم بتحديث كود `index.html` في مستودعك على جيت هاب مرة أخرى، مع التأكد من إضافة دالة `handleGoogleLogin` وزر الدخول بشكل صحيح.
-
-إليك الكود المحدث بالكامل. قم بنسخه واستبدال الكود الحالي في ملف `index.html` على جيت هاب:
-
-```html
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -196,7 +189,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'real-estate-app';
+    const appId = 'real-estate-app';
 
     window.db = db;
     window.appId = appId;
@@ -224,7 +217,6 @@
     onAuthStateChanged(auth, (user) => {
       window.currentUser = user;
       if (user) {
-        // إذا لم يكن المستخدم مجهولاً، فهذا يعني أنه سجل دخوله عبر جوجل
         isAuthenticated = !user.isAnonymous;
         renderAuth();
         fetchItems();
@@ -250,7 +242,6 @@
       try {
         const result = await window.signInWithPopup(window.auth, provider);
         showToast(`مرحباً بك، ${result.user.displayName}`);
-        // حالة الدخول سيتم تحديثها تلقائياً عبر onAuthStateChanged
       } catch (error) {
         console.error("Error logging in:", error);
         showToast('حدث خطأ أثناء تسجيل الدخول أو تم الإلغاء');
@@ -264,7 +255,6 @@
         await window.signOut(window.auth);
         isAuthenticated = false;
         showToast('تم تسجيل الخروج بنجاح');
-        // العودة لحالة الزائر المجهول لتصفح العقارات
         if (window.initAuth) window.initAuth();
       } catch (error) {
         console.error("Error logging out:", error);
@@ -319,10 +309,7 @@
         snapshot.forEach((docSnap) => {
           dataList.push({ id_doc: docSnap.id, ...docSnap.data() });
         });
-        
-        // إزالة العرض الوهمي وعرض العروض الحقيقية فقط
         items = dataList;
-        
         updateStats();
         renderUI();
       }, (err) => console.error(err));
@@ -373,7 +360,6 @@
       const searchVal = document.getElementById('search-input').value.toLowerCase();
       const typeVal = document.getElementById('filter-type').value;
       const cityVal = document.getElementById('filter-city').value;
-      const purposeVal = document.getElementById('filter-purpose').value;
 
       const filtered = items.filter(item => {
         if (activeTab === 'matches') return checkMatch(item);
@@ -410,10 +396,7 @@
         `;
       } else {
         if (filtered.length === 0) {
-          container.innerHTML = `<div class="text-center py-20 text-slate-500 font-bold flex flex-col items-center gap-3">
-            <i data-lucide="folder-search" class="w-12 h-12 text-slate-600"></i>
-            لا توجد بيانات متاحة حالياً
-          </div>`;
+          container.innerHTML = `<div class="text-center py-20 text-slate-500 font-bold">لا توجد نتائج مطابقة لعرضها</div>`;
           lucide.createIcons();
           return;
         }
@@ -522,12 +505,11 @@
             <div><label class="block text-xs font-bold text-slate-400 mb-1">مميزات أخرى (كتابة حرة)</label><input type="text" id="f-other" placeholder="مسبح، دخول ذكي..." class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">اسم المالك / المسوق</label><input type="text" id="f-name" value="عبدالله آل يحيى" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">اسم المالك</label><input type="text" id="f-name" value="عبدالله آل يحيى" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">رقم الجوال</label><input type="text" id="f-phone" value="0530666633" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
           </div>
         `;
       } else {
-        bReq.className = "flex-1 py-3 rounded-xl font-bold text-sm transition bg-slate-950 text-slate-400 border border-slate-800";
         bReq.className = "flex-1 py-3 rounded-xl font-bold text-sm transition bg-emerald-600 text-white";
         bOffer.className = "flex-1 py-3 rounded-xl font-bold text-sm transition bg-slate-950 text-slate-400 border border-slate-800";
         fields.innerHTML = `
@@ -550,7 +532,6 @@
     async function handleCreate(e) {
       e.preventDefault();
       if (!window.db) return;
-      
       const priceVal = document.getElementById('f-price')?.value || '';
       const newItem = {
         id: (addMode === 'offer' ? 'OFF-' : 'REQ-') + Math.floor(100 + Math.random() * 900),
@@ -566,8 +547,7 @@
         ownerName: document.getElementById('f-name').value,
         phone: document.getElementById('f-phone').value,
         isFavorite: false,
-        isMine: true,
-        createdAt: new Date().toISOString()
+        isMine: true
       };
 
       try {
@@ -575,15 +555,12 @@
         await window.addDoc(colRef, newItem);
         closeAddModal();
         showToast('تم الحفظ في السحابة بنجاح');
-      } catch (err) { 
-        console.error(err); 
-        showToast('حدث خطأ أثناء الحفظ');
-      }
+      } catch (err) { console.error(err); }
     }
 
     async function deleteItem(docId) {
       if (!isAuthenticated || !docId) return;
-      if (confirm('هل أنت متأكد من حذف هذا السجل بشكل نهائي؟')) {
+      if (confirm('هل أنت متأكد من الحذف؟')) {
         try {
           const docRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'properties_v3', docId);
           await window.deleteDoc(docRef);
@@ -602,7 +579,7 @@
     }
 
     function shareItem(id) {
-      const item = items.find(i => i.id === id);
+      const item = items.find(idVal => idVal.id === id);
       if (!item) return;
       const text = `رقم المرجع: ${item.id}\nالمدينة: ${item.city}\nالسعر: ${item.price || item.priceMax || 'حسب الطلب'}`;
       navigator.clipboard?.writeText(text);
@@ -610,7 +587,7 @@
     }
 
     function exportPDF(id) {
-      const item = items.find(i => i.id === id);
+      const item = items.find(idVal => idVal.id === id);
       if (!item) return;
       const win = window.open('', '_blank');
       win.document.write(`<html dir="rtl"><body style="font-family:sans-serif;padding:40px;"><h1>تقرير ${item.id}</h1><p>المدينة: ${item.city}</p><p>السعر: ${item.price || item.priceMax || '-'}</p></body></html>`);
@@ -622,5 +599,3 @@
   </script>
 </body>
 </html>
-
-```
