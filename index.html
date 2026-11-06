@@ -161,7 +161,7 @@
         <div id="form-dynamic-fields"></div>
         <div class="pt-4 border-t border-slate-800 flex justify-end gap-3">
           <button type="button" onclick="closeAddModal()" class="px-6 py-3 rounded-xl bg-slate-800 text-slate-300 font-bold text-sm">إلغاء</button>
-          <button type="submit" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg">حفظ ونشر</button>
+          <button type="submit" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg">حفظ التغييرات</button>
         </div>
       </form>
     </div>
@@ -228,18 +228,12 @@
     let editingDocId = null;
 
     async function handleGoogleLogin() {
-      if (!window.auth || !window.GoogleAuthProvider) {
-        showToast('جاري تهيئة النظام، يرجى الانتظار');
-        return;
-      }
+      if (!window.auth || !window.GoogleAuthProvider) return;
       const provider = new window.GoogleAuthProvider();
       try {
         await window.signInWithPopup(window.auth, provider);
         showToast('تم تسجيل الدخول بنجاح');
-      } catch (error) {
-        console.error("Google login error:", error);
-        showToast('فشل تسجيل الدخول');
-      }
+      } catch (error) { showToast('فشل تسجيل الدخول'); }
     }
 
     async function handleLogout() {
@@ -249,7 +243,7 @@
         window.isAuthenticated = false;
         await window.signInAnonymously(window.auth);
         showToast('تم تسجيل الخروج بنجاح');
-      } catch (error) { console.error("Logout error:", error); }
+      } catch (error) { console.error(error); }
     }
 
     function renderAuth() {
@@ -329,11 +323,15 @@
       renderUI();
     }
 
-    function checkMatch(item) {
+    function getMatches(item) {
       if (item.type === 'offer') {
-        return items.some(req => req.type === 'request' && req.city === item.city);
+        return items.filter(req => req.type === 'request' && 
+                                   req.city === item.city && 
+                                   (req.propertyType === item.propertyType || !req.propertyType));
       } else {
-        return items.some(off => off.type === 'offer' && off.city === item.city);
+        return items.filter(off => off.type === 'offer' && 
+                                   off.city === item.city && 
+                                   (off.propertyType === item.propertyType || !item.propertyType));
       }
     }
 
@@ -344,7 +342,7 @@
       const cityVal = document.getElementById('filter-city').value;
 
       const filtered = items.filter(item => {
-        if (activeTab === 'matches') return checkMatch(item);
+        if (activeTab === 'matches') return getMatches(item).length > 0;
         let matchTab = true;
         if (activeTab === 'offers') matchTab = item.type === 'offer';
         if (activeTab === 'requests') matchTab = item.type === 'request';
@@ -387,7 +385,8 @@
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             ${filtered.map(item => {
               const isOffer = item.type === 'offer';
-              const hasMatch = checkMatch(item);
+              const matches = getMatches(item);
+              const hasMatch = matches.length > 0;
               return `
                 <div class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl hover:border-slate-700 transition flex flex-col group">
                   ${isOffer && item.imageUrl ? `
@@ -405,7 +404,15 @@
                       <span class="text-xs text-slate-400 font-mono">${item.id}</span>
                     </div>
                     <h3 class="text-lg font-bold text-white mb-2">${isOffer ? `${item.propertyType} في ${item.city} - ${item.district || ''}` : `طلب ${item.propertyType} في ${item.city}`}</h3>
-                    ${hasMatch ? `<div class="mb-4 bg-emerald-500/10 border border-emerald-500/30 p-2 rounded-xl text-[11px] text-emerald-400 font-bold flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i>يوجد ${isOffer ? 'طلب' : 'عرض'} مطابق متوفر</div>` : ''}
+                    
+                    ${hasMatch ? `
+                    <div class="mb-4 bg-emerald-500/10 border border-emerald-500/30 p-2.5 rounded-xl text-[11px] text-emerald-400 font-bold flex flex-col gap-1.5">
+                      <div class="flex items-center gap-1.5"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i>يوجد ${isOffer ? 'طلب' : 'عرض'} مطابق:</div>
+                      <div class="flex flex-wrap gap-1">
+                        ${matches.map(m => `<span class="bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-300">${m.id}</span>`).join('')}
+                      </div>
+                    </div>` : ''}
+
                     <div class="space-y-2 text-sm text-slate-300 mb-6 flex-1">
                       ${isOffer ? `
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الشارع:</span><span class="font-medium text-white">${item.street || '-'} (${item.streetCount || '-'})</span></div>
@@ -425,7 +432,7 @@
                     <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
                       <div class="text-xs text-slate-400 flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i>${item.ownerName || 'مقدم الطلب'}</div>
                       <div class="flex items-center gap-1.5">
-                        <button onclick="shareItem('${item.id_doc}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-xl transition" title="مشاركة"><i data-lucide="share-2" class="w-4 h-4"></i></button>
+                        <button onclick="shareItem('${item.id_doc}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-xl transition" title="مشاركة بكامل التفاصيل"><i data-lucide="share-2" class="w-4 h-4"></i></button>
                         <button onclick="exportPDF('${item.id_doc}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-sky-400 rounded-xl transition" title="تصدير بروشور PDF"><i data-lucide="download" class="w-4 h-4"></i></button>
                         ${window.isAuthenticated ? `
                           <button onclick="openEditModal('${item.id_doc}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-xl transition" title="تعديل"><i data-lucide="edit" class="w-4 h-4"></i></button>
@@ -444,11 +451,7 @@
     }
 
     function applyFilters() { renderUI(); }
-
-    function toggleNotifications() {
-      document.getElementById('notifications-box').classList.toggle('hidden');
-    }
-
+    function toggleNotifications() { document.getElementById('notifications-box').classList.toggle('hidden'); }
     function showToast(msg) {
       const t = document.getElementById('toast');
       document.getElementById('toast-text').innerText = msg;
@@ -457,10 +460,7 @@
     }
 
     function openAddModal() {
-      if (!window.isAuthenticated) {
-        showToast('يجب تسجيل الدخول أولاً');
-        return;
-      }
+      if (!window.isAuthenticated) { showToast('يجب تسجيل الدخول أولاً'); return; }
       editingDocId = null;
       document.getElementById('modal-title').innerText = 'إضافة إعلان أو طلب جديد';
       document.getElementById('modal-mode-buttons').classList.remove('hidden');
@@ -476,7 +476,6 @@
       document.getElementById('modal-title').innerText = `تعديل (${item.id})`;
       document.getElementById('modal-mode-buttons').classList.add('hidden');
       document.getElementById('add-modal').classList.remove('hidden');
-      
       setAddMode(item.type, item);
     }
 
@@ -678,21 +677,124 @@
     function shareItem(docId) {
       const item = items.find(i => i.id_doc === docId);
       if (!item) return;
-      const text = `رقم المرجع: ${item.id}\nالمدينة: ${item.city}\nالسعر: ${item.price || item.priceMax || 'حسب الطلب'}`;
-      navigator.clipboard?.writeText(text);
-      showToast('تم نسخ تفاصيل المشاركة بنجاح');
+      
+      let text = '';
+      if(item.type === 'offer') {
+        text = `🌟 عرض عقاري مميز 🌟\n\n` +
+               `📌 رقم المرجع: ${item.id}\n` +
+               `🏢 نوع العقار: ${item.propertyType} (${item.offerType})\n` +
+               `📍 الموقع: ${item.city} - حي ${item.district || 'غير محدد'}\n` +
+               `🛣️ الشارع: ${item.street || '-'} (${item.streetCount || '-'})\n` +
+               `📐 المساحة: ${item.landArea || '-'} م²\n` +
+               `📏 الأطوال: ${item.dimensions || '-'}\n` +
+               `🛏️ الغرف: ${item.rooms || '-'} | 🛁 دورات المياه: ${item.bathrooms || '-'}\n` +
+               (item.propertyAge ? `🏗️ عمر العقار: ${item.propertyAge}\n` : '') +
+               `💰 السعر: ${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}\n` +
+               (item.rentIncome ? `💵 الدخل الإيجاري: ${Number(item.rentIncome).toLocaleString()} ر.س\n` : '') +
+               (item.roi ? `📈 العائد الاستثماري: ${item.roi}% سنوياً\n` : '') +
+               (item.otherFeatures ? `✨ مميزات إضافية: ${item.otherFeatures}\n` : '') +
+               `\nللتواصل: ${item.ownerName} - ${item.phone}`;
+      } else {
+         text = `🎯 طلب عقاري 🎯\n\n` +
+               `📌 رقم المرجع: ${item.id}\n` +
+               `🏢 نوع العقار المطلوب: ${item.propertyType} (${item.requestType})\n` +
+               `📍 المدينة: ${item.city}\n` +
+               `🏘️ الأحياء المستهدفة: ${item.districts || 'غير محدد'}\n` +
+               `💰 الميزانية القصوى: ${item.priceMax ? Number(item.priceMax).toLocaleString() + ' ر.س' : 'غير محدد'}\n` +
+               `📐 المساحة الدنيا: ${item.areaMin ? item.areaMin + ' م²' : '-'}\n` +
+               `⏳ موعد الاحتياج: ${item.urgency || '-'}\n` +
+               `💳 طريقة الدفع: ${item.paymentMethod || '-'}\n` +
+               (item.details ? `📝 تفاصيل إضافية: ${item.details}\n` : '') +
+               `\nللتواصل: ${item.ownerName} - ${item.phone}`;
+      }
+
+      if (navigator.share) {
+         navigator.share({ title: 'تفاصيل العقار', text: text }).catch(console.error);
+      } else {
+         navigator.clipboard?.writeText(text);
+         showToast('تم نسخ التفاصيل الكاملة للمشاركة');
+      }
     }
 
     function exportPDF(docId) {
       const item = items.find(i => i.id_doc === docId);
       if (!item) return;
       const win = window.open('', '_blank');
-      win.document.write(`<html dir="rtl"><body style="font-family:sans-serif;padding:40px;"><h1>تقرير ${item.id}</h1><p>المدينة: ${item.city}</p><p>السعر: ${item.price || item.priceMax || '-'}</p></body></html>`);
+      const isOffer = item.type === 'offer';
+      const title = isOffer ? 'عرض عقاري' : 'طلب عقاري';
+
+      let detailsHtml = '';
+      if (isOffer) {
+        detailsHtml = `
+          <div class="box"><div class="label">نوع العقار</div><div class="value">${item.propertyType} (${item.offerType})</div></div>
+          <div class="box"><div class="label">الموقع</div><div class="value">${item.city} - حي ${item.district || '-'}</div></div>
+          <div class="box"><div class="label">المساحة</div><div class="value">${item.landArea || '-'} م²</div></div>
+          <div class="box"><div class="label">الأطوال</div><div class="value">${item.dimensions || '-'}</div></div>
+          <div class="box"><div class="label">الشارع</div><div class="value">${item.street || '-'} (${item.streetCount || '-'})</div></div>
+          <div class="box"><div class="label">السعر</div><div class="value">${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}</div></div>
+          <div class="box"><div class="label">عمر العقار</div><div class="value">${item.propertyAge || '-'}</div></div>
+          <div class="box"><div class="label">الغرف / دورات المياه</div><div class="value">${item.rooms || '-'} غرف / ${item.bathrooms || '-'} حمامات</div></div>
+          ${item.roi ? `<div class="box"><div class="label">العائد الاستثماري</div><div class="value" style="color:#10b981;">${item.roi}% سنوياً</div></div>` : ''}
+          ${item.otherFeatures ? `<div class="box" style="grid-column: span 2;"><div class="label">مميزات إضافية</div><div class="value">${item.otherFeatures}</div></div>` : ''}
+        `;
+      } else {
+        detailsHtml = `
+          <div class="box"><div class="label">نوع العقار المطلوب</div><div class="value">${item.propertyType} (${item.requestType})</div></div>
+          <div class="box"><div class="label">المدينة</div><div class="value">${item.city}</div></div>
+          <div class="box"><div class="label">الأحياء المستهدفة</div><div class="value">${item.districts || 'غير محدد'}</div></div>
+          <div class="box"><div class="label">الميزانية القصوى</div><div class="value">${item.priceMax ? Number(item.priceMax).toLocaleString() + ' ر.س' : 'غير محدد'}</div></div>
+          <div class="box"><div class="label">المساحة الدنيا</div><div class="value">${item.areaMin ? item.areaMin + ' م²' : '-'}</div></div>
+          <div class="box"><div class="label">طريقة الدفع</div><div class="value">${item.paymentMethod || '-'}</div></div>
+          <div class="box"><div class="label">موعد الاحتياج</div><div class="value">${item.urgency || '-'}</div></div>
+          <div class="box"><div class="label">الغرض</div><div class="value">${item.requestPurpose || '-'}</div></div>
+          ${item.details ? `<div class="box" style="grid-column: span 2;"><div class="label">تفاصيل إضافية</div><div class="value">${item.details}</div></div>` : ''}
+        `;
+      }
+
+      const html = `
+        <html dir="rtl">
+        <head>
+          <title>تفاصيل ${title} - ${item.id}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+            body { font-family: 'Cairo', sans-serif; padding: 40px; color: #1e293b; background: #f8fafc; }
+            .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-top: 5px solid #10b981; }
+            .header { text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 30px; }
+            .title { color: #0f172a; font-size: 28px; font-weight: 900; margin-bottom: 5px; }
+            .subtitle { color: #10b981; font-size: 18px; font-weight: bold;}
+            .img-container { width: 100%; height: 350px; background: #f1f5f9; border-radius: 12px; overflow: hidden; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
+            .img-container img { width: 100%; height: 100%; object-fit: cover; }
+            .details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
+            .box { background: #f8fafc; padding: 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
+            .label { font-size: 13px; color: #64748b; margin-bottom: 5px; font-weight: bold; }
+            .value { font-size: 18px; font-weight: 900; color: #0f172a; }
+            .footer { text-align: center; color: #64748b; font-size: 14px; margin-top: 40px; border-top: 2px solid #f1f5f9; padding-top: 20px; font-weight: bold; line-height: 1.6;}
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 class="title">منصة عبدالله آل يحيى العقارية</h1>
+              <div class="subtitle">${title} | المرجع: ${item.id}</div>
+            </div>
+            ${item.imageUrl && isOffer ? `<div class="img-container"><img src="${item.imageUrl}" alt="صورة العقار" onerror="this.style.display='none'"/></div>` : ''}
+            <div class="details-grid">
+              ${detailsHtml}
+            </div>
+            <div class="footer">
+              للتواصل والاستفسار: ${item.ownerName || 'غير محدد'} - ${item.phone || 'غير محدد'}<br>
+              تم إصدار هذا الملف تلقائياً بتاريخ ${new Date().toLocaleDateString('ar-SA')}
+            </div>
+          </div>
+          <script>
+            window.onload = function() { setTimeout(function() { window.print(); }, 800); }
+          </script>
+        </body>
+        </html>
+      `;
+      win.document.write(html);
       win.document.close();
-      setTimeout(() => win.print(), 300);
     }
   </script>
 </body>
 </html>
-
-```
