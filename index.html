@@ -1,3 +1,10 @@
+فكرة ممتازة جداً وتعتبر احترافية لتنظيم "طلبات العملاء" في منصتك العقارية. الخانات التي ذكرتها (مثل الغرض، المساحة من وإلى، الميزانية من وإلى، طرق الدفع، موعد الاحتياج، وعدد الغرف) ستجعل نظام الطلبات دقيقاً ويسهل عملية "المطابقة الذكية" مع العروض المتاحة.
+
+قمت بتعديل نموذج **إضافة طلب عميل** في الكود ليدعم كافة هذه الخانات الجديدة بشكل كامل ومترتب.
+
+انسخ هذا الكود بالكامل واستبدله بملف `index.html` في مستودعك على GitHub:
+
+```html
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -112,7 +119,7 @@
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
         <div class="relative md:col-span-2 lg:col-span-1">
           <i data-lucide="search" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4"></i>
-          <input type="text" id="search-input" oninput="applyFilters()" placeholder="ابحث بالمدينة، الحي أو رقم الإعلان..." class="w-full bg-slate-950 border border-slate-700 py-3 pr-11 pl-4 rounded-xl text-sm text-white placeholder-slate-500 focus:border-emerald-500 outline-none transition" />
+          <input type="text" id="search-input" oninput="applyFilters()" placeholder="ابحث بالمدينة، الحي أو رقم المرجع..." class="w-full bg-slate-950 border border-slate-700 py-3 pr-11 pl-4 rounded-xl text-sm text-white placeholder-slate-500 focus:border-emerald-500 outline-none transition" />
         </div>
         <select id="filter-type" onchange="applyFilters()" class="bg-slate-950 border border-slate-700 py-3 px-4 rounded-xl text-sm text-white focus:border-emerald-500 outline-none transition cursor-pointer">
           <option value="الكل">كل أنواع العقارات</option>
@@ -205,7 +212,6 @@
     window.doc = doc;
     window.onSnapshot = onSnapshot;
 
-    // Auth setup
     window.initAuth = async () => {
       try {
         await signInAnonymously(auth);
@@ -231,13 +237,11 @@
     let addMode = 'offer';
     let items = [];
 
-    // Google Login function
     async function handleGoogleLogin() {
       if (!window.auth || !window.GoogleAuthProvider) {
         showToast('جاري تهيئة النظام، يرجى الانتظار');
         return;
       }
-      
       const provider = new window.GoogleAuthProvider();
       try {
         const result = await window.signInWithPopup(window.auth, provider);
@@ -248,7 +252,6 @@
       }
     }
 
-    // Logout function
     async function handleLogout() {
       if (!window.auth || !window.signOut) return;
       try {
@@ -422,7 +425,7 @@
                       <span class="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">${isOffer ? 'عرض عقاري' : 'طلب عميل'} • ${item.propertyType}</span>
                       <span class="text-xs text-slate-400 font-mono">${item.id}</span>
                     </div>
-                    <h3 class="text-lg font-bold text-white mb-2">${isOffer ? `${item.propertyType} في ${item.city} - ${item.district || ''}` : `طلب ${item.propertyType} في ${item.city}`}</h3>
+                    <h3 class="text-lg font-bold text-white mb-2">${isOffer ? `${item.propertyType} في ${item.city} - ${item.district || ''}` : `طلب ${item.propertyType} في ${item.city} (${item.purpose || 'سكن'})`}</h3>
                     ${hasMatch ? `<div class="mb-4 bg-emerald-500/10 border border-emerald-500/30 p-2 rounded-xl text-[11px] text-emerald-400 font-bold flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i>يوجد ${isOffer ? 'طلب' : 'عرض'} مطابق متوفر</div>` : ''}
                     <div class="space-y-2 text-sm text-slate-300 mb-6 flex-1">
                       <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">المدينة:</span><span class="font-medium text-white">${item.city}</span></div>
@@ -431,11 +434,17 @@
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الأطوال:</span><span class="font-medium text-white">${item.dimensions || '-'}</span></div>
                         <div class="flex items-center justify-between pt-2"><span class="text-slate-500 text-xs">السعر:</span><span class="text-xl font-black text-emerald-400">${item.price ? Number(item.price).toLocaleString() : 'حسب الطلب'} ر.س</span></div>
                       ` : `
-                        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الميزانية:</span><span class="font-bold text-emerald-400">${item.priceMax ? Number(item.priceMax).toLocaleString() + ' ر.س' : 'غير محدد'}</span></div>
+                        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الغرض:</span><span class="font-medium text-white">${item.purpose || '-'}</span></div>
+                        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الأحياء:</span><span class="font-medium text-white">${item.district || '-'}</span></div>
+                        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">المساحة المطلوبة:</span><span class="font-medium text-white">${item.areaFrom || '0'} إلى ${item.areaTo || '∞'} م²</span></div>
+                        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الأطوال:</span><span class="font-medium text-white">${item.dimensions || 'غير محدد'}</span></div>
+                        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الميزانية:</span><span class="font-bold text-emerald-400">${item.budgetFrom || '0'} - ${item.budgetTo || 'غير محدد'} ر.س</span></div>
+                        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الدفع والاحتياج:</span><span class="font-medium text-white">${item.paymentMethod || '-'} • ${item.urgency || '-'}</span></div>
+                        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">عدد الغرف:</span><span class="font-medium text-white">${item.rooms || '-'}</span></div>
                       `}
                     </div>
                     <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
-                      <div class="text-xs text-slate-400">${isOffer ? (item.ownerName || 'مقدم العرض') : 'عبر الإدارة'}</div>
+                      <div class="text-xs text-slate-400">${isOffer ? (item.ownerName || 'مقدم العرض') : (item.ownerName || 'العميل')}</div>
                       <div class="flex items-center gap-1.5">
                         <button onclick="shareItem('${item.id}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-xl transition"><i data-lucide="share-2" class="w-4 h-4"></i></button>
                         <button onclick="exportPDF('${item.id}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-sky-400 rounded-xl transition" title="تصدير PDF"><i data-lucide="file-text" class="w-4 h-4"></i></button>
@@ -470,7 +479,7 @@
 
     function openAddModal() {
       if (!isAuthenticated) {
-        showToast('يجب تسجيل الدخول أولاً لإضافة العروض');
+        showToast('يجب تسجيل الدخول أولاً لإضافة العروض والطلبات');
         return;
       }
       document.getElementById('add-modal').classList.remove('hidden');
@@ -491,18 +500,19 @@
         bOffer.className = "flex-1 py-3 rounded-xl font-bold text-sm transition bg-emerald-600 text-white";
         bReq.className = "flex-1 py-3 rounded-xl font-bold text-sm transition bg-slate-950 text-slate-400 border border-slate-800";
         fields.innerHTML = `
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">رقم الإعلان (اختياري)</label><input type="text" id="f-custom-id" placeholder="OFF-101" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">نوع العقار</label><input type="text" id="f-prop" value="فيلا" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">المدينة</label><input type="text" id="f-city" value="الرياض" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الحي</label><input type="text" id="f-district" placeholder="العارض" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">المساحة (م²)</label><input type="number" id="f-area" placeholder="450" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">الأطوال (مثال: 20 في 30)</label><input type="text" id="f-dim" placeholder="20 في 30" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">الأطوال</label><input type="text" id="f-dim" placeholder="20 في 22.5" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">السعر المطلوب</label><input type="number" id="f-price" placeholder="1850000" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">مميزات أخرى (كتابة حرة)</label><input type="text" id="f-other" placeholder="مسبح، دخول ذكي..." class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">السعر المطلوب (ر.س)</label><input type="number" id="f-price" placeholder="1850000" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">مميزات أخرى</label><input type="text" id="f-other" placeholder="مسبح، دخول ذكي..." class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 mb-1">اسم المالك</label><input type="text" id="f-name" value="عبدالله آل يحيى" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
@@ -513,16 +523,48 @@
         bReq.className = "flex-1 py-3 rounded-xl font-bold text-sm transition bg-emerald-600 text-white";
         bOffer.className = "flex-1 py-3 rounded-xl font-bold text-sm transition bg-slate-950 text-slate-400 border border-slate-800";
         fields.innerHTML = `
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">نوع الطلب</label><input type="text" id="f-prop" value="فيلا" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">رقم الطلب (اختياري)</label><input type="text" id="f-custom-id" placeholder="REQ-201" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">نوع العقار</label><input type="text" id="f-prop" value="فيلا" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">المدينة</label><input type="text" id="f-city" value="الرياض" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">الأحياء المهتم بها</label><input type="text" id="f-district" placeholder="العارض، الياسمين" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">الميزانية القصوى</label><input type="number" id="f-price" placeholder="2000000" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">الأحياء المستهدفة</label><input type="text" id="f-district" placeholder="العارض، الياسمين" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1">الغرض</label>
+              <select id="f-purpose" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white outline-none">
+                <option value="سكن">سكن</option>
+                <option value="استثمار">استثمار</option>
+                <option value="تجاري">تجاري</option>
+              </select>
+            </div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">عدد الغرف</label><input type="text" id="f-rooms" placeholder="مثال: 4 غرف أو أكثر" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">الاسم</label><input type="text" id="f-name" value="عميل" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">المساحة المطلوبة (من - إلى م²)</label><div class="flex gap-2"><input type="number" id="f-area-from" placeholder="من" class="w-1/2 bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /><input type="number" id="f-area-to" placeholder="إلى" class="w-1/2 bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">الأطوال المطلوبة</label><input type="text" id="f-dim" placeholder="مثال: 20 في 30" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">الميزانية (من - إلى ر.س)</label><div class="flex gap-2"><input type="number" id="f-budget-from" placeholder="من" class="w-1/2 bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /><input type="number" id="f-budget-to" placeholder="إلى" class="w-1/2 bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div></div>
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1">طريقة الدفع</label>
+              <select id="f-payment" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white outline-none">
+                <option value="تمويل بنكي">تمويل بنكي</option>
+                <option value="كاش">كاش (نقدي)</option>
+                <option value="تمويل أو كاش">تمويل أو كاش</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1">موعد الاحتياج</label>
+              <select id="f-urgency" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white outline-none">
+                <option value="عاجل">عاجل (فوري)</option>
+                <option value="خلال شهر">خلال شهر</option>
+                <option value="غير عاجل">غير عاجل</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">اسم العميل</label><input type="text" id="f-name" value="عميل" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">رقم الجوال</label><input type="text" id="f-phone" value="0500000000" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
           </div>
         `;
@@ -532,35 +574,54 @@
     async function handleCreate(e) {
       e.preventDefault();
       if (!window.db) return;
-      const priceVal = document.getElementById('f-price')?.value || '';
+      
+      const customId = document.getElementById('f-custom-id')?.value.trim();
+      const generatedId = (addMode === 'offer' ? 'OFF-' : 'REQ-') + Math.floor(100 + Math.random() * 900);
+      
       const newItem = {
-        id: (addMode === 'offer' ? 'OFF-' : 'REQ-') + Math.floor(100 + Math.random() * 900),
+        id: customId || generatedId,
         type: addMode,
         propertyType: document.getElementById('f-prop').value,
         city: document.getElementById('f-city').value,
         district: document.getElementById('f-district')?.value || '',
-        landArea: document.getElementById('f-area')?.value || '',
-        dimensions: document.getElementById('f-dim')?.value || '',
-        price: addMode === 'offer' ? priceVal : '',
-        priceMax: addMode === 'request' ? priceVal : '',
-        otherFeatures: document.getElementById('f-other')?.value || '',
         ownerName: document.getElementById('f-name').value,
         phone: document.getElementById('f-phone').value,
         isFavorite: false,
-        isMine: true
+        isMine: true,
+        createdAt: new Date().toISOString()
       };
+
+      if (addMode === 'offer') {
+        newItem.landArea = document.getElementById('f-area')?.value || '';
+        newItem.dimensions = document.getElementById('f-dim')?.value || '';
+        newItem.price = document.getElementById('f-price')?.value || '';
+        newItem.otherFeatures = document.getElementById('f-other')?.value || '';
+      } else {
+        newItem.purpose = document.getElementById('f-purpose')?.value || 'سكن';
+        newItem.rooms = document.getElementById('f-rooms')?.value || '';
+        newItem.areaFrom = document.getElementById('f-area-from')?.value || '';
+        newItem.areaTo = document.getElementById('f-area-to')?.value || '';
+        newItem.dimensions = document.getElementById('f-dim')?.value || '';
+        newItem.budgetFrom = document.getElementById('f-budget-from')?.value || '';
+        newItem.budgetTo = document.getElementById('f-budget-to')?.value || '';
+        newItem.paymentMethod = document.getElementById('f-payment')?.value || 'كاش';
+        newItem.urgency = document.getElementById('f-urgency')?.value || 'عاجل';
+      }
 
       try {
         const colRef = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'properties_v3');
         await window.addDoc(colRef, newItem);
         closeAddModal();
         showToast('تم الحفظ في السحابة بنجاح');
-      } catch (err) { console.error(err); }
+      } catch (err) { 
+        console.error(err); 
+        showToast('حدث خطأ أثناء الحفظ');
+      }
     }
 
     async function deleteItem(docId) {
       if (!isAuthenticated || !docId) return;
-      if (confirm('هل أنت متأكد من الحذف؟')) {
+      if (confirm('هل أنت متأكد من حذف هذا السجل بشكل نهائي؟')) {
         try {
           const docRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'properties_v3', docId);
           await window.deleteDoc(docRef);
@@ -581,7 +642,7 @@
     function shareItem(id) {
       const item = items.find(idVal => idVal.id === id);
       if (!item) return;
-      const text = `رقم المرجع: ${item.id}\nالمدينة: ${item.city}\nالسعر: ${item.price || item.priceMax || 'حسب الطلب'}`;
+      const text = `رقم المرجع: ${item.id}\nالمدينة: ${item.city}\nالنوع: ${item.propertyType}`;
       navigator.clipboard?.writeText(text);
       showToast('تم نسخ تفاصيل المشاركة بنجاح');
     }
@@ -590,7 +651,7 @@
       const item = items.find(idVal => idVal.id === id);
       if (!item) return;
       const win = window.open('', '_blank');
-      win.document.write(`<html dir="rtl"><body style="font-family:sans-serif;padding:40px;"><h1>تقرير ${item.id}</h1><p>المدينة: ${item.city}</p><p>السعر: ${item.price || item.priceMax || '-'}</p></body></html>`);
+      win.document.write(`<html dir="rtl"><body style="font-family:sans-serif;padding:40px;"><h1>تقرير ${item.id}</h1><p>المدينة: ${item.city}</p><p>نوع العقار: ${item.propertyType}</p></body></html>`);
       win.document.close();
       setTimeout(() => win.print(), 300);
     }
@@ -599,3 +660,5 @@
   </script>
 </body>
 </html>
+
+```
