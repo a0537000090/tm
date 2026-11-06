@@ -208,19 +208,46 @@
     };
     window.initAuth();
     
-    onAuthStateChanged(auth, (user) => {
+    // ==========================================
+    // قائمة الإيميلات المصرح لها بالدخول (المدراء)
+    // ==========================================
+    const ALLOWED_EMAILS = [
+      'a0537000090@gmail.com',  // 👈 قم بتغيير هذا الإيميل إلى إيميلك الحقيقي الذي ستسجل الدخول به
+      '29ab6bf8@gmail.com'     // 👈 يمكنك إضافة إيميلات شركائك هنا، أو حذفه
+    ];
+
+    onAuthStateChanged(auth, async (user) => {
       window.currentUser = user;
       if (user) {
-        window.isAuthenticated = !user.isAnonymous;
-        renderAuth();
-        fetchItems();
+        if (!user.isAnonymous) {
+          // فحص هل الإيميل موجود ضمن القائمة المصرح لها؟
+          if (ALLOWED_EMAILS.includes(user.email)) {
+            window.isAuthenticated = true;
+            renderAuth();
+            fetchItems();
+          } else {
+            // الإيميل غير مصرح له
+            window.isAuthenticated = false;
+            showToast('عفواً، هذا الحساب غير مصرح له بالدخول كمدير');
+            await window.signOut(window.auth);
+            // سيقوم النظام تلقائياً بتحويله لحساب زائر بعد تسجيل الخروج
+          }
+        } else {
+          // حساب زائر (مجهول)
+          window.isAuthenticated = false;
+          renderAuth();
+          fetchItems();
+        }
+      } else {
+        // لا يوجد مستخدم، قم بتهيئة حساب الزائر
+        window.isAuthenticated = false;
+        window.initAuth(); 
       }
     });
   </script>
 
   <!-- Application Logic Script -->
   <script>
-    window.isAuthenticated = false;
     let activeTab = 'all';
     let viewMode = 'grid';
     let addMode = 'offer';
@@ -232,16 +259,14 @@
       const provider = new window.GoogleAuthProvider();
       try {
         await window.signInWithPopup(window.auth, provider);
-        showToast('تم تسجيل الدخول بنجاح');
-      } catch (error) { showToast('فشل تسجيل الدخول'); }
+        // الترحيب سيتم التعامل معه في onAuthStateChanged إذا كان مصرحاً له
+      } catch (error) { showToast('فشل تسجيل الدخول، حاول مرة أخرى'); }
     }
 
     async function handleLogout() {
       if (!window.auth || !window.signOut) return;
       try {
         await window.signOut(window.auth);
-        window.isAuthenticated = false;
-        await window.signInAnonymously(window.auth);
         showToast('تم تسجيل الخروج بنجاح');
       } catch (error) { console.error(error); }
     }
@@ -268,7 +293,7 @@
       } else {
         container.innerHTML = `
           <button onclick="handleGoogleLogin()" class="bg-white text-slate-900 hover:bg-slate-200 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition shadow-sm">
-            <i data-lucide="log-in" class="w-4 h-4"></i> دخول المسوقين (Google)
+            <i data-lucide="log-in" class="w-4 h-4"></i> دخول المسوقين
           </button>
         `;
         addContainer.innerHTML = '';
@@ -798,3 +823,5 @@
   </script>
 </body>
 </html>
+
+```
