@@ -11,6 +11,9 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
     body { font-family: 'Cairo', sans-serif; }
+    /* إخفاء شريط التمرير للسلايدر مع الحفاظ على إمكانية السحب */
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen pb-16 selection:bg-emerald-500 selection:text-white">
@@ -159,7 +162,7 @@
 
       <form id="add-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
         <div id="form-dynamic-fields"></div>
-        <div class="pt-4 border-t border-slate-800 flex justify-end gap-3">
+        <div class="pt-4 border-t border-slate-800 flex justify-end gap-3 mt-6">
           <button type="button" onclick="closeAddModal()" class="px-6 py-3 rounded-xl bg-slate-800 text-slate-300 font-bold text-sm">إلغاء</button>
           <button type="submit" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg">حفظ التغييرات</button>
         </div>
@@ -259,7 +262,6 @@
       const provider = new window.GoogleAuthProvider();
       try {
         await window.signInWithPopup(window.auth, provider);
-        // الترحيب سيتم التعامل معه في onAuthStateChanged إذا كان مصرحاً له
       } catch (error) { showToast('فشل تسجيل الدخول، حاول مرة أخرى'); }
     }
 
@@ -310,7 +312,8 @@
         snapshot.forEach((docSnap) => {
           dataList.push({ id_doc: docSnap.id, ...docSnap.data() });
         });
-        items = dataList;
+        // ترتيب العناصر من الأحدث للأقدم (حسب وقت الإضافة بناءً على جلبها، أو يمكنك إضافة حقل timestamp لاحقاً)
+        items = dataList.reverse();
         updateStats();
         renderUI();
       }, (err) => console.error("Firestore error:", err));
@@ -412,17 +415,34 @@
               const isOffer = item.type === 'offer';
               const matches = getMatches(item);
               const hasMatch = matches.length > 0;
+              // معالجة الصور المتعددة
+              const imagesList = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : (item.imageUrl ? [item.imageUrl] : []);
+              let imagesHtmlRender = '';
+              
+              if (isOffer && imagesList.length > 0) {
+                imagesHtmlRender = `
+                  <div class="relative h-56 overflow-hidden bg-slate-950 group/slider">
+                    <div class="flex overflow-x-auto snap-x snap-mandatory h-full w-full hide-scrollbar scroll-smooth" id="slider-${item.id_doc}" dir="ltr">
+                      ${imagesList.map(img => `<div class="snap-center shrink-0 w-full h-full"><img src="${img}" alt="عقار" class="w-full h-full object-cover" /></div>`).join('')}
+                    </div>
+                    ${imagesList.length > 1 ? `
+                      <button onclick="document.getElementById('slider-${item.id_doc}').scrollBy({left: -300, behavior: 'smooth'})" class="absolute top-1/2 left-2 -translate-y-1/2 bg-slate-900/80 text-white p-1.5 rounded-full opacity-0 group-hover/slider:opacity-100 transition z-10 hover:bg-emerald-500 shadow"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                      <button onclick="document.getElementById('slider-${item.id_doc}').scrollBy({left: 300, behavior: 'smooth'})" class="absolute top-1/2 right-2 -translate-y-1/2 bg-slate-900/80 text-white p-1.5 rounded-full opacity-0 group-hover/slider:opacity-100 transition z-10 hover:bg-emerald-500 shadow"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                      <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10 bg-slate-900/60 px-2 py-1.5 rounded-full backdrop-blur">
+                        ${imagesList.map((_, i) => `<div class="w-1.5 h-1.5 rounded-full bg-white/70"></div>`).join('')}
+                      </div>
+                    ` : ''}
+                    <div class="absolute top-4 right-4 bg-slate-950/80 backdrop-blur text-emerald-400 font-bold px-3 py-1 rounded-xl text-xs border border-slate-800 z-10">${item.offerType || 'بيع'}</div>
+                    <button onclick="toggleFavorite('${item.id_doc}')" class="absolute top-4 left-4 p-2.5 rounded-full backdrop-blur border transition z-10 ${item.isFavorite ? 'bg-rose-500 text-white border-rose-600' : 'bg-slate-950/60 text-slate-300 border-slate-800'}">
+                      <i data-lucide="heart" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                `;
+              }
+
               return `
                 <div class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl hover:border-slate-700 transition flex flex-col group">
-                  ${isOffer && item.imageUrl ? `
-                    <div class="relative h-52 overflow-hidden bg-slate-950">
-                      <img src="${item.imageUrl}" alt="عقار" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                      <div class="absolute top-4 right-4 bg-slate-950/80 backdrop-blur text-emerald-400 font-bold px-3 py-1 rounded-xl text-xs border border-slate-800">${item.offerType || 'بيع'}</div>
-                      <button onclick="toggleFavorite('${item.id_doc}')" class="absolute top-4 left-4 p-2.5 rounded-full backdrop-blur border transition ${item.isFavorite ? 'bg-rose-500 text-white border-rose-600' : 'bg-slate-950/60 text-slate-300 border-slate-800'}">
-                        <i data-lucide="heart" class="w-4 h-4"></i>
-                      </button>
-                    </div>
-                  ` : ''}
+                  ${imagesHtmlRender}
                   <div class="p-6 flex-1 flex flex-col">
                     <div class="flex items-center justify-between mb-3">
                       <span class="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">${isOffer ? 'عرض عقاري' : 'طلب عميل'} • ${item.propertyType}</span>
@@ -524,6 +544,20 @@
       }
     }
 
+    // دالة لإضافة حقل إدخال صورة جديدة
+    function addImageInput(value = '') {
+      const container = document.getElementById('images-container');
+      const div = document.createElement('div');
+      div.className = "flex gap-2";
+      div.innerHTML = `
+          <input type="text" value="${value}" placeholder="https://..." class="f-img-input flex-1 bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white focus:border-emerald-500 outline-none" />
+          <button type="button" onclick="this.parentElement.remove()" class="p-3 bg-rose-500/10 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition border border-rose-500/20"><i data-lucide="trash" class="w-4 h-4"></i></button>
+      `;
+      container.appendChild(div);
+      lucide.createIcons();
+    }
+    window.addImageInput = addImageInput;
+
     function setAddMode(mode, data = {}) {
       addMode = mode;
       const bOffer = document.getElementById('modal-btn-offer');
@@ -570,13 +604,24 @@
             <div><label class="block text-xs font-bold text-slate-400 mb-1">حالة الصك</label><input type="text" id="f-deed-type" value="${data.deedType || 'صك إلكتروني'}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">رقم الصك</label><input type="text" id="f-deed-num" value="${data.deedNumber || ''}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
-          <div><label class="block text-xs font-bold text-slate-400 mb-1">رابط صورة العقار</label><input type="text" id="f-img" value="${data.imageUrl || ''}" placeholder="https://..." class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
+          
+          <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl">
+            <label class="block text-xs font-bold text-slate-400 mb-3">صور العقار (رابط أو أكثر)</label>
+            <div id="images-container" class="space-y-3"></div>
+            <button type="button" onclick="addImageInput()" class="mt-3 text-xs bg-emerald-500/10 text-emerald-400 px-4 py-2.5 rounded-xl border border-emerald-500/20 hover:bg-emerald-500 hover:text-white font-bold flex items-center gap-1.5 transition"><i data-lucide="plus" class="w-3.5 h-3.5"></i> إضافة صورة أخرى</button>
+          </div>
+
           <div><label class="block text-xs font-bold text-slate-400 mb-1">مميزات إضافية</label><input type="text" id="f-other" value="${data.otherFeatures || ''}" placeholder="دخول ذكي، مسبح..." class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 mb-1">اسم المالك/المسوق</label><input type="text" id="f-name" value="${data.ownerName || 'عبدالله آل يحيى'}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">رقم الجوال</label><input type="text" id="f-phone" value="${data.phone || '0530666633'}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
           </div>
         `;
+        
+        // إضافة حقول الصور الموجودة مسبقاً (أو حقل فارغ واحد إذا كان جديداً)
+        const imagesList = data.imageUrls && data.imageUrls.length > 0 ? data.imageUrls : (data.imageUrl ? [data.imageUrl] : ['']);
+        imagesList.forEach(img => addImageInput(img));
+
       } else {
         if(bReq) bReq.className = "flex-1 py-3 rounded-xl font-bold text-sm transition bg-emerald-600 text-white";
         if(bOffer) bOffer.className = "flex-1 py-3 rounded-xl font-bold text-sm transition bg-slate-950 text-slate-400 border border-slate-800";
@@ -646,8 +691,14 @@
         payload.isNegotiable = document.getElementById('f-nego').value;
         payload.deedType = document.getElementById('f-deed-type').value;
         payload.deedNumber = document.getElementById('f-deed-num').value;
-        payload.imageUrl = document.getElementById('f-img').value;
         payload.otherFeatures = document.getElementById('f-other').value;
+        
+        // تجميع روابط الصور وإضافتها في المصفوفة
+        const imageInputs = document.querySelectorAll('.f-img-input');
+        payload.imageUrls = Array.from(imageInputs).map(input => input.value).filter(val => val.trim() !== '');
+        // لضمان التوافقية السابقة في حالة صورة واحدة
+        payload.imageUrl = payload.imageUrls.length > 0 ? payload.imageUrls[0] : '';
+        
       } else {
         payload.requestType = document.getElementById('f-req-type').value;
         payload.requestRole = document.getElementById('f-req-role').value;
@@ -705,6 +756,13 @@
       
       let text = '';
       if(item.type === 'offer') {
+        const imagesList = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : (item.imageUrl ? [item.imageUrl] : []);
+        let imagesText = '';
+        if(imagesList.length === 1) imagesText = `🖼️ رابط الصورة: ${imagesList[0]}\n`;
+        else if (imagesList.length > 1) {
+            imagesText = `🖼️ روابط الصور:\n` + imagesList.map((img, index) => ` ${index + 1}- ${img}`).join('\n') + '\n';
+        }
+
         text = `🌟 عرض عقاري مميز 🌟\n\n` +
                `📌 رقم المرجع: ${item.id}\n` +
                `🏢 نوع العقار: ${item.propertyType} (${item.offerType})\n` +
@@ -718,7 +776,7 @@
                (item.rentIncome ? `💵 الدخل الإيجاري: ${Number(item.rentIncome).toLocaleString()} ر.س\n` : '') +
                (item.roi ? `📈 العائد الاستثماري: ${item.roi}% سنوياً\n` : '') +
                (item.mapUrl ? `📍 رابط الموقع: ${item.mapUrl}\n` : '') +
-               (item.imageUrl ? `🖼️ رابط الصورة: ${item.imageUrl}\n` : '') +
+               imagesText +
                (item.otherFeatures ? `✨ مميزات إضافية: ${item.otherFeatures}\n` : '') +
                `\nللتواصل: ${item.ownerName} - ${item.phone}`;
       } else {
@@ -749,6 +807,16 @@
       const win = window.open('', '_blank');
       const isOffer = item.type === 'offer';
       const title = isOffer ? 'عرض عقاري' : 'طلب عقاري';
+
+      const imagesList = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : (item.imageUrl ? [item.imageUrl] : []);
+      let pdfImagesHtml = '';
+      if (isOffer) {
+        if (imagesList.length === 1) {
+          pdfImagesHtml = `<div class="single-img-container"><img src="${imagesList[0]}" alt="صورة العقار" onerror="this.style.display='none'"/></div>`;
+        } else if (imagesList.length > 1) {
+          pdfImagesHtml = `<div class="images-grid">` + imagesList.map(img => `<img src="${img}" alt="صورة العقار" onerror="this.style.display='none'"/>`).join('') + `</div>`;
+        }
+      }
 
       let detailsHtml = '';
       if (isOffer) {
@@ -791,8 +859,15 @@
             .header { text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 30px; }
             .title { color: #0f172a; font-size: 28px; font-weight: 900; margin-bottom: 5px; }
             .subtitle { color: #10b981; font-size: 18px; font-weight: bold;}
-            .img-container { width: 100%; height: 350px; background: #f1f5f9; border-radius: 12px; overflow: hidden; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
-            .img-container img { width: 100%; height: 100%; object-fit: cover; }
+            
+            /* تنسيق الصورة الواحدة */
+            .single-img-container { width: 100%; height: 350px; background: #f1f5f9; border-radius: 12px; overflow: hidden; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
+            .single-img-container img { width: 100%; height: 100%; object-fit: cover; }
+            
+            /* تنسيق الصور المتعددة */
+            .images-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
+            .images-grid img { width: 100%; height: 250px; object-fit: cover; border-radius: 12px; }
+
             .details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
             .box { background: #f8fafc; padding: 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
             .label { font-size: 13px; color: #64748b; margin-bottom: 5px; font-weight: bold; }
@@ -806,7 +881,9 @@
               <h1 class="title">منصة عبدالله آل يحيى العقارية</h1>
               <div class="subtitle">${title} | المرجع: ${item.id}</div>
             </div>
-            ${item.imageUrl && isOffer ? `<div class="img-container"><img src="${item.imageUrl}" alt="صورة العقار" onerror="this.style.display='none'"/></div>` : ''}
+            
+            ${pdfImagesHtml}
+            
             <div class="details-grid">
               ${detailsHtml}
             </div>
