@@ -79,7 +79,7 @@
   <!-- Private Main Container -->
   <div id="private-view" class="container mx-auto px-4 py-6 hidden">
     
-    <!-- Stats Row (تمت إضافة عدادات إجمالي العروض والطلبات هنا) -->
+    <!-- Stats Row -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
       <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
         <div>
@@ -414,7 +414,6 @@
       const roiItems = offers.filter(i => i.roi > 0);
       const avgRoi = roiItems.length > 0 ? (roiItems.reduce((s, c) => s + parseFloat(c.roi), 0) / roiItems.length).toFixed(1) : 0;
 
-      // تحديث العدادات والإحصائيات في واجهة المستخدم
       document.getElementById('stat-offers-count').innerHTML = `${offers.length} <span class="text-sm font-normal text-slate-500">عرض</span>`;
       document.getElementById('stat-requests-count').innerHTML = `${requests.length} <span class="text-sm font-normal text-slate-500">طلب</span>`;
       document.getElementById('stat-total-value').innerHTML = `${Number(totalVal).toLocaleString()} <span class="text-sm font-normal text-slate-500">ر.س</span>`;
@@ -523,7 +522,10 @@
                         ${imagesList.map((_, i) => `<div class="w-1.5 h-1.5 rounded-full bg-white/70"></div>`).join('')}
                       </div>
                     ` : ''}
-                    <div class="absolute top-4 right-4 bg-slate-950/80 backdrop-blur text-emerald-400 font-bold px-3 py-1 rounded-xl text-xs border border-slate-800 z-10">${item.offerType || 'بيع'}</div>
+                    <div class="absolute top-4 right-4 flex gap-2 z-10">
+                      <div class="bg-slate-950/80 backdrop-blur text-emerald-400 font-bold px-3 py-1 rounded-xl text-xs border border-slate-800">${item.offerType || 'بيع'}</div>
+                      ${item.status === 'مباع' ? `<div class="bg-rose-500/90 backdrop-blur text-white font-bold px-3 py-1 rounded-xl text-xs border border-rose-600 shadow-lg">تم البيع</div>` : ''}
+                    </div>
                     <button onclick="toggleFavorite('${item.id_doc}')" class="absolute top-4 left-4 p-2.5 rounded-full backdrop-blur border transition z-10 ${item.isFavorite ? 'bg-rose-500 text-white border-rose-600' : 'bg-slate-950/60 text-slate-300 border-slate-800'}">
                       <i data-lucide="heart" class="w-4 h-4"></i>
                     </button>
@@ -536,7 +538,10 @@
                   ${imagesHtmlRender}
                   <div class="p-6 flex-1 flex flex-col">
                     <div class="flex items-center justify-between mb-3">
-                      <span class="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">${isOffer ? 'عرض عقاري' : 'طلب عميل'} • ${item.propertyType}</span>
+                      <div class="flex gap-2">
+                        <span class="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">${isOffer ? 'عرض عقاري' : 'طلب عميل'} • ${item.propertyType}</span>
+                        ${isOffer ? `<span class="text-xs font-bold px-3 py-1 rounded-lg border ${item.status === 'مباع' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-sky-500/10 text-sky-400 border-sky-500/20'}">${item.status || 'متاح'}</span>` : ''}
+                      </div>
                       <span class="text-xs text-slate-400 font-mono">${item.id}</span>
                     </div>
                     <h3 class="text-lg font-bold text-white mb-2">${isOffer ? `${item.propertyType} في ${item.city} - ${item.district || ''}` : `طلب ${item.propertyType} في ${item.city}`}</h3>
@@ -669,7 +674,7 @@
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الشارع</label><input type="text" id="f-street" value="${data.street || ''}" placeholder="الملك فهد" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">عدد الشوارع</label><select id="f-street-count" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white"><option value="شارع واحد">شارع واحد</option><option value="شارعين">شارعين</option><option value="ثلاثة شوارع">ثلاثة شوارع</option></select></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">عدد الشوارع</label><select id="f-street-count" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white"><option value="شارع واحد" ${data.streetCount==='شارع واحد'?'selected':''}>شارع واحد</option><option value="شارعين" ${data.streetCount==='شارعين'?'selected':''}>شارعين</option><option value="ثلاثة شوارع" ${data.streetCount==='ثلاثة شوارع'?'selected':''}>ثلاثة شوارع</option></select></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">مساحة الأرض (م²)</label><input type="number" id="f-area" value="${data.landArea || ''}" placeholder="450" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الأطوال</label><input type="text" id="f-dim" value="${data.dimensions || ''}" placeholder="20 في 22.5" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
@@ -689,8 +694,11 @@
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الدخل الإيجاري السنوي</label><input type="number" id="f-rent" value="${data.rentIncome || ''}" oninput="calculateROI()" placeholder="120000" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
           <div id="roi-display" class="bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl text-xs text-emerald-400 font-bold hidden"></div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">قابل للتفاوض؟</label><select id="f-nego" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white"><option value="نعم">نعم</option><option value="لا">لا</option></select></div>
+          
+          <!-- تمت إضافة حالة العقار وتعديل تخطيط الخيارات -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">حالة العقار</label><select id="f-status" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white"><option value="متاح" ${data.status !== 'مباع' ? 'selected' : ''}>متاح</option><option value="مباع" ${data.status === 'مباع' ? 'selected' : ''}>مباع</option></select></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">قابل للتفاوض؟</label><select id="f-nego" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white"><option value="نعم" ${data.isNegotiable !== 'لا' ? 'selected' : ''}>نعم</option><option value="لا" ${data.isNegotiable === 'لا' ? 'selected' : ''}>لا</option></select></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">حالة الصك</label><input type="text" id="f-deed-type" value="${data.deedType || 'صك إلكتروني'}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">رقم الصك</label><input type="text" id="f-deed-num" value="${data.deedNumber || ''}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
@@ -777,6 +785,7 @@
         const p = parseFloat(payload.price || 0);
         const r = parseFloat(payload.rentIncome || 0);
         payload.roi = (p > 0 && r > 0) ? ((r / p) * 100).toFixed(2) : '';
+        payload.status = document.getElementById('f-status').value;
         payload.isNegotiable = document.getElementById('f-nego').value;
         payload.deedType = document.getElementById('f-deed-type').value;
         payload.deedNumber = document.getElementById('f-deed-num').value;
@@ -853,6 +862,7 @@
         text = `عرض عقاري\n\n` +
                `رقم المرجع: ${item.id}\n` +
                `نوع العقار: ${item.propertyType} (${item.offerType})\n` +
+               `حالة العقار: ${item.status || 'متاح'}\n` +
                `الموقع: ${item.city} - حي ${item.district || 'غير محدد'}\n` +
                `الشارع: ${item.street || '-'} (${item.streetCount || '-'})\n` +
                `المساحة: ${item.landArea || '-'} م²\n` +
@@ -909,6 +919,7 @@
       if (isOffer) {
         detailsHtml = `
           <div class="box"><div class="label">نوع العقار</div><div class="value">${item.propertyType} (${item.offerType})</div></div>
+          <div class="box"><div class="label">حالة العقار</div><div class="value" style="color: ${item.status === 'مباع' ? '#e11d48' : '#0ea5e9'};">${item.status || 'متاح'}</div></div>
           <div class="box"><div class="label">الموقع</div><div class="value">${item.city} - حي ${item.district || '-'}</div></div>
           <div class="box"><div class="label">المساحة</div><div class="value">${item.landArea || '-'} م²</div></div>
           <div class="box"><div class="label">الأطوال</div><div class="value">${item.dimensions || '-'}</div></div>
