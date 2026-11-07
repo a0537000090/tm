@@ -42,17 +42,16 @@
         <div id="notifications-container" class="relative hidden">
           <button onclick="toggleNotifications()" class="relative p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 transition border border-slate-700">
             <i data-lucide="bell" class="w-5 h-5"></i>
-            <span class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-slate-950 rounded-full text-xs font-black flex items-center justify-center shadow-lg">1</span>
+            <span id="notif-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-slate-950 rounded-full text-xs font-black flex items-center justify-center shadow-lg hidden">0</span>
           </button>
           <div id="notifications-box" class="absolute left-0 mt-3 w-80 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-4 z-50 hidden">
             <div class="font-bold text-sm mb-3 pb-2 border-b border-slate-800 text-white flex justify-between items-center">
-              <span>التنبيهات الفورية</span>
-              <span class="text-xs text-emerald-400">سحابي</span>
+              <span>التنبيهات الفورية والذكية</span>
+              <span class="text-xs text-emerald-400">سحابي مباشر</span>
             </div>
-            <div class="space-y-2">
-              <div class="p-3 rounded-xl bg-slate-950 text-xs border border-slate-800 text-slate-300">
-                <p>مرحباً بك في منصة عبدالله آل يحيى السحابية</p>
-                <span class="text-[10px] text-slate-500 mt-1 block">الآن</span>
+            <div id="notifications-list" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+              <div class="p-3 rounded-xl bg-slate-950 text-xs border border-slate-800 text-slate-400 text-center">
+                لا توجد تنبيهات جديدة حالياً
               </div>
             </div>
           </div>
@@ -63,7 +62,7 @@
     </div>
   </header>
 
-  <!-- Guest / Dummy View (يظهر فقط لغير المصرح لهم) -->
+  <!-- Guest / Dummy View -->
   <div id="guest-view" class="container mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[70vh] text-center">
     <div class="w-24 h-24 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-6 shadow-2xl">
       <i data-lucide="lock" class="w-10 h-10 text-emerald-500"></i>
@@ -77,7 +76,7 @@
     </button>
   </div>
 
-  <!-- Private Main Container (يظهر فقط بعد تسجيل الدخول الناجح) -->
+  <!-- Private Main Container -->
   <div id="private-view" class="container mx-auto px-4 py-6 hidden">
     
     <!-- Stats Row -->
@@ -217,9 +216,6 @@
     window.doc = doc;
     window.onSnapshot = onSnapshot;
     
-    // ==========================================
-    // قائمة الإيميلات المصرح لها بالدخول (المدراء)
-    // ==========================================
     const ALLOWED_EMAILS = [
       'a0537000090@gmail.com',  
       '29ab6bf8@gmail.com'     
@@ -228,25 +224,20 @@
     onAuthStateChanged(auth, async (user) => {
       window.currentUser = user;
       
-      // إذا كان المستخدم مسجل دخول باستخدام جوجل وليس زائر (Anonymous)
       if (user && !user.isAnonymous) {
-        // التحقق من قائمة الإيميلات المصرح لها
         if (ALLOWED_EMAILS.includes(user.email)) {
           window.isAuthenticated = true;
           renderAuth();
-          fetchItems(); // جلب البيانات فقط بعد التأكد من الصلاحية
+          fetchItems(); 
         } else {
-          // الإيميل غير مصرح له
           window.isAuthenticated = false;
           showToast('عفواً، هذا الحساب غير مصرح له بالدخول كمدير');
           await window.signOut(window.auth);
           renderAuth();
         }
       } else {
-        // زائر غير مسجل الدخول، أو مسجل كزائر (Anonymous)
         window.isAuthenticated = false;
         renderAuth();
-        // لن نقوم باستدعاء fetchItems() هنا أبداً لضمان بقاء البيانات محمية
       }
     });
   </script>
@@ -259,6 +250,8 @@
     let items = [];
     let editingDocId = null;
     let unsubscribeSnapshot = null;
+    let appNotifications = []; // سجل التنبيهات الفورية والأرشيف
+    let isInitialLoad = true;
 
     async function handleGoogleLogin() {
       if (!window.auth || !window.GoogleAuthProvider) return;
@@ -273,8 +266,10 @@
       try {
         await window.signOut(window.auth);
         showToast('تم تسجيل الخروج بنجاح');
-        // تفريغ البيانات من الواجهة فوراً
         items = [];
+        appNotifications = [];
+        isInitialLoad = true;
+        renderNotificationsUI();
         if (unsubscribeSnapshot) unsubscribeSnapshot();
       } catch (error) { console.error(error); }
     }
@@ -287,7 +282,6 @@
       const notifications = document.getElementById('notifications-container');
       
       if (window.isAuthenticated) {
-        // إظهار واجهة النظام الحقيقية وإخفاء الواجهة الوهمية
         guestView.classList.add('hidden');
         privateView.classList.remove('hidden');
         notifications.classList.remove('hidden');
@@ -307,7 +301,6 @@
           </button>
         `;
       } else {
-        // إظهار الواجهة الوهمية وإخفاء النظام الحقيقي
         guestView.classList.remove('hidden');
         privateView.classList.add('hidden');
         notifications.classList.add('hidden');
@@ -326,16 +319,78 @@
       if (!window.db || !window.isAuthenticated) return;
       const colRef = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'properties_v3');
       
-      // حفظ دالة الإلغاء لإيقاف الاستماع إذا سجل المستخدم خروجه
       unsubscribeSnapshot = window.onSnapshot(colRef, (snapshot) => {
         const dataList = [];
+        snapshot.docChanges().forEach((change) => {
+          const docData = { id_doc: change.doc.id, ...change.doc.data() };
+          const timeNow = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+
+          if (!isInitialLoad) {
+            if (change.type === "added") {
+              // تحقق من المطابقة الفورية وتوليد تنبيه ذكي
+              checkAndTriggerSmartMatch(docData);
+            } else if (change.type === "modified") {
+              pushNotification(`تم تحديث بيانات العقار/الطلب (${docData.id})`, timeNow);
+            }
+          }
+        });
+
         snapshot.forEach((docSnap) => {
           dataList.push({ id_doc: docSnap.id, ...docSnap.data() });
         });
+
         items = dataList.reverse();
+        isInitialLoad = false;
         updateStats();
         renderUI();
       }, (err) => console.error("Firestore error:", err));
+    }
+
+    // نظام المطابقة الذكية وتوليد التنبيهات الفورية
+    function checkAndTriggerSmartMatch(newItem) {
+      const timeNow = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+      const matches = getMatches(newItem);
+
+      if (matches.length > 0) {
+        const matchIds = matches.map(m => m.id).join('، ');
+        const msg = `🔔 تطابق جديد! ${newItem.type === 'offer' ? 'العرض' : 'الطلب'} (${newItem.id}) يتطابق مع: [${matchIds}]`;
+        pushNotification(msg, timeNow);
+        showToast(msg);
+      } else {
+        const msg = `إضافة ${newItem.type === 'offer' ? 'عرض عقاري' : 'طلب عميل'} جديد برقم ${newItem.id}`;
+        pushNotification(msg, timeNow);
+        showToast(msg);
+      }
+    }
+
+    function pushNotification(text, time) {
+      appNotifications.unshift({ text, time });
+      if (appNotifications.length > 20) appNotifications.pop(); // الاحتفاظ بأحدث 20 تنبيهاً في السجل
+      renderNotificationsUI();
+    }
+
+    function renderNotificationsUI() {
+      const badge = document.getElementById('notif-badge');
+      const list = document.getElementById('notifications-list');
+      if (!badge || !list) return;
+
+      if (appNotifications.length > 0) {
+        badge.innerText = appNotifications.length;
+        badge.classList.remove('hidden');
+        list.innerHTML = appNotifications.map(n => `
+          <div class="p-3 rounded-xl bg-slate-950 text-xs border border-slate-800 text-slate-300">
+            <p class="leading-relaxed">${n.text}</p>
+            <span class="text-[10px] text-emerald-400 mt-1 block">${n.time}</span>
+          </div>
+        `).join('');
+      } else {
+        badge.classList.add('hidden');
+        list.innerHTML = `
+          <div class="p-3 rounded-xl bg-slate-950 text-xs border border-slate-800 text-slate-400 text-center">
+            لا توجد تنبيهات جديدة حالياً
+          </div>
+        `;
+      }
     }
 
     function updateStats() {
@@ -520,7 +575,7 @@
       const t = document.getElementById('toast');
       document.getElementById('toast-text').innerText = msg;
       t.classList.remove('hidden');
-      setTimeout(() => t.classList.add('hidden'), 3000);
+      setTimeout(() => t.classList.add('hidden'), 4000);
     }
 
     function openAddModal() {
