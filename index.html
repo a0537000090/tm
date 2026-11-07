@@ -79,8 +79,22 @@
   <!-- Private Main Container -->
   <div id="private-view" class="container mx-auto px-4 py-6 hidden">
     
-    <!-- Stats Row -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <!-- Stats Row (تمت إضافة عدادات إجمالي العروض والطلبات هنا) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
+        <div>
+          <div class="text-slate-400 text-xs font-bold mb-1">إجمالي العروض المتاحة</div>
+          <div id="stat-offers-count" class="text-xl font-black text-white">0 <span class="text-sm font-normal text-slate-500">عرض</span></div>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center"><i data-lucide="home" class="w-5 h-5"></i></div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
+        <div>
+          <div class="text-slate-400 text-xs font-bold mb-1">إجمالي الطلبات النشطة</div>
+          <div id="stat-requests-count" class="text-xl font-black text-white">0 <span class="text-sm font-normal text-slate-500">طلب</span></div>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-sky-500/10 text-sky-400 flex items-center justify-center"><i data-lucide="users" class="w-5 h-5"></i></div>
+      </div>
       <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
         <div>
           <div class="text-slate-400 text-xs font-bold mb-1">إجمالي قيمة العروض</div>
@@ -93,14 +107,14 @@
           <div class="text-slate-400 text-xs font-bold mb-1">متوسط العائد الاستثماري</div>
           <div id="stat-avg-roi" class="text-xl font-black text-white">0% <span class="text-sm font-normal text-slate-500">سنوياً</span></div>
         </div>
-        <div class="w-10 h-10 rounded-full bg-sky-500/10 text-sky-400 flex items-center justify-center"><i data-lucide="trending-up" class="w-5 h-5"></i></div>
+        <div class="w-10 h-10 rounded-full bg-teal-500/10 text-teal-400 flex items-center justify-center"><i data-lucide="trending-up" class="w-5 h-5"></i></div>
       </div>
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm sm:col-span-2 lg:col-span-1">
         <div>
-          <div class="text-slate-400 text-xs font-bold mb-1">طلبات الشراء النشطة</div>
-          <div id="stat-requests-count" class="text-xl font-black text-white">0 <span class="text-sm font-normal text-slate-500">طلب</span></div>
+          <div class="text-slate-400 text-xs font-bold mb-1">إجمالي السجلات سحابياً</div>
+          <div id="stat-all-count" class="text-xl font-black text-white">0 <span class="text-sm font-normal text-slate-500">سجل</span></div>
         </div>
-        <div class="w-10 h-10 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center"><i data-lucide="user" class="w-5 h-5"></i></div>
+        <div class="w-10 h-10 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center"><i data-lucide="database" class="w-5 h-5"></i></div>
       </div>
     </div>
 
@@ -250,7 +264,7 @@
     let items = [];
     let editingDocId = null;
     let unsubscribeSnapshot = null;
-    let appNotifications = []; // سجل التنبيهات الفورية والأرشيف
+    let appNotifications = [];
     let isInitialLoad = true;
 
     async function handleGoogleLogin() {
@@ -327,7 +341,6 @@
 
           if (!isInitialLoad) {
             if (change.type === "added") {
-              // تحقق من المطابقة الفورية وتوليد تنبيه ذكي
               checkAndTriggerSmartMatch(docData);
             } else if (change.type === "modified") {
               pushNotification(`تم تحديث بيانات العقار/الطلب (${docData.id})`, timeNow);
@@ -346,7 +359,6 @@
       }, (err) => console.error("Firestore error:", err));
     }
 
-    // نظام المطابقة الذكية وتوليد التنبيهات الفورية
     function checkAndTriggerSmartMatch(newItem) {
       const timeNow = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
       const matches = getMatches(newItem);
@@ -365,7 +377,7 @@
 
     function pushNotification(text, time) {
       appNotifications.unshift({ text, time });
-      if (appNotifications.length > 20) appNotifications.pop(); // الاحتفاظ بأحدث 20 تنبيهاً في السجل
+      if (appNotifications.length > 20) appNotifications.pop();
       renderNotificationsUI();
     }
 
@@ -394,15 +406,20 @@
     }
 
     function updateStats() {
-      const offers = items.filter(i => i.type === 'offer' && i.price);
-      const totalVal = offers.reduce((sum, curr) => sum + parseFloat(curr.price), 0);
-      const roiItems = items.filter(i => i.type === 'offer' && i.roi > 0);
+      const offers = items.filter(i => i.type === 'offer');
+      const requests = items.filter(i => i.type === 'request');
+      const offersWithPrice = offers.filter(i => i.price);
+      
+      const totalVal = offersWithPrice.reduce((sum, curr) => sum + parseFloat(curr.price), 0);
+      const roiItems = offers.filter(i => i.roi > 0);
       const avgRoi = roiItems.length > 0 ? (roiItems.reduce((s, c) => s + parseFloat(c.roi), 0) / roiItems.length).toFixed(1) : 0;
-      const reqCount = items.filter(i => i.type === 'request').length;
 
+      // تحديث العدادات والإحصائيات في واجهة المستخدم
+      document.getElementById('stat-offers-count').innerHTML = `${offers.length} <span class="text-sm font-normal text-slate-500">عرض</span>`;
+      document.getElementById('stat-requests-count').innerHTML = `${requests.length} <span class="text-sm font-normal text-slate-500">طلب</span>`;
       document.getElementById('stat-total-value').innerHTML = `${Number(totalVal).toLocaleString()} <span class="text-sm font-normal text-slate-500">ر.س</span>`;
       document.getElementById('stat-avg-roi').innerHTML = `${avgRoi}% <span class="text-sm font-normal text-slate-500">سنوياً</span>`;
-      document.getElementById('stat-requests-count').innerHTML = `${reqCount} <span class="text-sm font-normal text-slate-500">طلب</span>`;
+      document.getElementById('stat-all-count').innerHTML = `${items.length} <span class="text-sm font-normal text-slate-500">سجل</span>`;
     }
 
     function setActiveTab(tab) {
