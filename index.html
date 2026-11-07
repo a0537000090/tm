@@ -18,6 +18,10 @@
     /* إصلاح تداخل الخريطة مع النوافذ المنبثقة */
     .leaflet-container { z-index: 10 !important; font-family: 'Cairo', sans-serif;}
     .leaflet-popup-content-wrapper { border-radius: 16px; }
+    /* تحسين شكل أداة التحكم بالطبقات */
+    .leaflet-control-layers { border-radius: 12px !important; border: 1px solid #334155 !important; background-color: #0f172a !important; color: #f8fafc !important; }
+    .leaflet-control-layers-toggle { width: 40px !important; height: 40px !important; }
+    .leaflet-control-layers-list label { display: flex; items-align: center; gap: 8px; margin-bottom: 5px; font-size: 13px; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen pb-16 selection:bg-emerald-500 selection:text-white">
@@ -493,11 +497,28 @@
         `;
         
         setTimeout(() => {
-          const map = L.map('main-map').setView([24.7136, 46.6753], 6);
-          
-          L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ar&x={x}&y={y}&z={z}', {
+          // تعريف طبقات الخرائط
+          const googleStreets = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ar&x={x}&y={y}&z={z}', {
               attribution: '&copy; Google Maps'
-          }).addTo(map);
+          });
+          
+          const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=ar&x={x}&y={y}&z={z}', {
+              attribution: '&copy; Google Maps'
+          });
+
+          // إنشاء الخريطة وتحديد الطبقة الافتراضية
+          const map = L.map('main-map', {
+              center: [24.7136, 46.6753],
+              zoom: 6,
+              layers: [googleStreets] // الطبقة الافتراضية للخريطة الرئيسية
+          });
+
+          // إضافة عنصر التحكم بالطبقات
+          const baseMaps = {
+              "🗺️ خريطة الشوارع": googleStreets,
+              "🌍 قمر صناعي": googleSatellite
+          };
+          L.control.layers(baseMaps, null, {position: 'topright'}).addTo(map);
 
           const cityCoords = {
             'الرياض': [24.7136, 46.6753],
@@ -665,7 +686,6 @@
       setTimeout(() => t.classList.add('hidden'), 4000);
     }
 
-    // دالة التحديث الذكي عند لصق الإحداثيات
     function updateMapFromCoords() {
         let latInput = document.getElementById('f-lat');
         let lngInput = document.getElementById('f-lng');
@@ -673,7 +693,6 @@
         let latVal = latInput.value.trim();
         let lngVal = lngInput.value.trim();
 
-        // اللصق الذكي: إذا قام المستخدم بلصق الإحداثيات كاملة بفاصلة في خانة خط العرض
         if (latVal.includes(',')) {
             let parts = latVal.split(',');
             latInput.value = parts[0].trim();
@@ -681,7 +700,6 @@
             latVal = latInput.value;
             lngVal = lngInput.value;
         } 
-        // أو إذا لصقها في خانة خط الطول بالخطأ
         else if (lngVal.includes(',')) {
             let parts = lngVal.split(',');
             latInput.value = parts[0].trim();
@@ -694,7 +712,7 @@
         const lng = parseFloat(lngVal);
         
         if (!isNaN(lat) && !isNaN(lng) && pickerMap) {
-            pickerMap.setView([lat, lng], 17); // تقريب عالي للموقع
+            pickerMap.setView([lat, lng], 17);
             if (pickerMarker) {
                 pickerMarker.setLatLng([lat, lng]);
             } else {
@@ -710,14 +728,30 @@
             pickerMarker = null;
         }
         setTimeout(() => {
-            const startLat = lat ? parseFloat(lat) : 24.7136; // الرياض افتراضياً
+            const startLat = lat ? parseFloat(lat) : 24.7136;
             const startLng = lng ? parseFloat(lng) : 46.6753;
             
-            pickerMap = L.map('picker-map').setView([startLat, startLng], lat ? 15 : 5);
-            
-            L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=ar&x={x}&y={y}&z={z}', {
+            // تعريف الطبقات
+            const googleStreets = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ar&x={x}&y={y}&z={z}', {
                 attribution: '&copy; Google Maps'
-            }).addTo(pickerMap);
+            });
+            const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=ar&x={x}&y={y}&z={z}', {
+                attribution: '&copy; Google Maps'
+            });
+
+            // إنشاء الخريطة والطبقة الافتراضية قمر صناعي
+            pickerMap = L.map('picker-map', {
+                center: [startLat, startLng],
+                zoom: lat ? 15 : 5,
+                layers: [googleSatellite]
+            });
+            
+            // إضافة زر التبديل بين الطبقات
+            const baseMaps = {
+                "🌍 قمر صناعي": googleSatellite,
+                "🗺️ خريطة الشوارع": googleStreets
+            };
+            L.control.layers(baseMaps, null, {position: 'topright'}).addTo(pickerMap);
             
             if (lat && lng) {
                 pickerMarker = L.marker([startLat, startLng]).addTo(pickerMap);
@@ -727,7 +761,6 @@
                 const clickedLat = e.latlng.lat.toFixed(6);
                 const clickedLng = e.latlng.lng.toFixed(6);
                 
-                // تحديث الخانات الظاهرة مباشرة عند الضغط على الخريطة
                 document.getElementById('f-lat').value = clickedLat;
                 document.getElementById('f-lng').value = clickedLng;
                 
@@ -800,7 +833,6 @@
       const bReq = document.getElementById('modal-btn-request');
       const fields = document.getElementById('form-dynamic-fields');
 
-      // قسم الخريطة المصغرة للتحديد مع خانات الإحداثيات الواضحة
       const pickerHtml = `
           <div class="col-span-1 md:col-span-4 mt-4 mb-4 bg-slate-950 border border-slate-800 p-4 rounded-2xl shadow-inner">
               <label class="block text-sm font-black text-white mb-4">الموقع الدقيق للإعلان أو الطلب <span class="text-xs font-normal text-slate-400 block mt-1">يدعم التحديد بالضغط أو لصق الإحداثيات مباشرة</span></label>
@@ -932,7 +964,6 @@
         ownerName: document.getElementById('f-name').value,
         phone: document.getElementById('f-phone').value,
         
-        // حفظ الإحداثيات ورابط الخريطة
         mapUrl: document.getElementById('f-map') ? document.getElementById('f-map').value : '',
         lat: document.getElementById('f-lat') ? document.getElementById('f-lat').value : '',
         lng: document.getElementById('f-lng') ? document.getElementById('f-lng').value : '',
@@ -1048,6 +1079,7 @@
                (item.rentIncome ? `الدخل الإيجاري: ${Number(item.rentIncome).toLocaleString()} ر.س\n` : '') +
                (item.roi ? `العائد الاستثماري: ${item.roi}% سنوياً\n` : '') +
                (item.mapUrl ? `رابط الموقع: ${item.mapUrl}\n` : '') +
+               (item.lat && item.lng ? `إحداثيات الموقع: ${item.lat}, ${item.lng}\n` : '') +
                imagesText +
                (item.otherFeatures ? `مميزات إضافية: ${item.otherFeatures}\n` : '') +
                `\nللتواصل: ${item.ownerName} - ${item.phone}`;
@@ -1062,6 +1094,7 @@
                `موعد الاحتياج: ${item.urgency || '-'}\n` +
                `طريقة الدفع: ${item.paymentMethod || '-'}\n` +
                (item.mapUrl ? `رابط الموقع المستهدف: ${item.mapUrl}\n` : '') +
+               (item.lat && item.lng ? `إحداثيات الموقع المستهدف: ${item.lat}, ${item.lng}\n` : '') +
                (item.details ? `تفاصيل إضافية: ${item.details}\n` : '') +
                `\nللتواصل: ${item.ownerName} - ${item.phone}`;
       }
@@ -1106,6 +1139,7 @@
           ${item.rentIncome ? `<div class="box"><div class="label">الدخل الإيجاري</div><div class="value">${Number(item.rentIncome).toLocaleString()} ر.س</div></div>` : ''}
           ${item.roi ? `<div class="box"><div class="label">العائد الاستثماري</div><div class="value" style="color:#10b981;">${item.roi}% سنوياً</div></div>` : ''}
           ${item.mapUrl ? `<div class="box" style="grid-column: span 2;"><div class="label">رابط الموقع (خريطة جوجل)</div><div class="value"><a href="${item.mapUrl}" target="_blank" style="color: #10b981; text-decoration: none; word-break: break-all; font-size: 15px;">${item.mapUrl}</a></div></div>` : ''}
+          ${item.lat && item.lng ? `<div class="box" style="grid-column: span 2;"><div class="label">إحداثيات الموقع</div><div class="value"><a href="https://maps.google.com/?q=${item.lat},${item.lng}" target="_blank" style="color: #10b981; text-decoration: none; word-break: break-all; font-size: 15px;">${item.lat}, ${item.lng}</a></div></div>` : ''}
           ${item.otherFeatures ? `<div class="box" style="grid-column: span 2;"><div class="label">مميزات إضافية</div><div class="value">${item.otherFeatures}</div></div>` : ''}
         `;
       } else {
@@ -1119,6 +1153,7 @@
           <div class="box"><div class="label">موعد الاحتياج</div><div class="value">${item.urgency || '-'}</div></div>
           <div class="box"><div class="label">الغرض</div><div class="value">${item.requestPurpose || '-'}</div></div>
           ${item.mapUrl ? `<div class="box" style="grid-column: span 2;"><div class="label">رابط الموقع المستهدف (خريطة جوجل)</div><div class="value"><a href="${item.mapUrl}" target="_blank" style="color: #10b981; text-decoration: none; word-break: break-all; font-size: 15px;">${item.mapUrl}</a></div></div>` : ''}
+          ${item.lat && item.lng ? `<div class="box" style="grid-column: span 2;"><div class="label">إحداثيات الموقع المستهدف</div><div class="value"><a href="https://maps.google.com/?q=${item.lat},${item.lng}" target="_blank" style="color: #10b981; text-decoration: none; word-break: break-all; font-size: 15px;">${item.lat}, ${item.lng}</a></div></div>` : ''}
           ${item.details ? `<div class="box" style="grid-column: span 2;"><div class="label">تفاصيل إضافية</div><div class="value">${item.details}</div></div>` : ''}
         `;
       }
@@ -1177,5 +1212,3 @@
   </script>
 </body>
 </html>
-
-```
