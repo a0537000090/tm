@@ -204,19 +204,19 @@
     window.doc = doc;
     window.onSnapshot = onSnapshot;
 
+    // دالة لتسجيل الدخول كزائر إذا لم يكن هناك أي حساب مسجل
     window.initAuth = async () => {
       try {
         await signInAnonymously(auth);
       } catch (err) { console.error("Auth error:", err); }
     };
-    window.initAuth();
     
     // ==========================================
     // قائمة الإيميلات المصرح لها بالدخول (المدراء)
     // ==========================================
     const ALLOWED_EMAILS = [
-      'a0537000090@gmail.com',  // 👈 قم بتغيير هذا الإيميل إلى إيميلك الحقيقي الذي ستسجل الدخول به
-      '29ab6bf8@gmail.com'     // 👈 يمكنك إضافة إيميلات شركائك هنا، أو حذفه
+      'a0537000090@gmail.com',  
+      '29ab6bf8@gmail.com'     
     ];
 
     onAuthStateChanged(auth, async (user) => {
@@ -242,7 +242,7 @@
           fetchItems();
         }
       } else {
-        // لا يوجد مستخدم، قم بتهيئة حساب الزائر
+        // لا يوجد مستخدم، قم بتهيئة حساب الزائر فقط في هذه الحالة
         window.isAuthenticated = false;
         window.initAuth(); 
       }
@@ -312,7 +312,7 @@
         snapshot.forEach((docSnap) => {
           dataList.push({ id_doc: docSnap.id, ...docSnap.data() });
         });
-        // ترتيب العناصر من الأحدث للأقدم (حسب وقت الإضافة بناءً على جلبها، أو يمكنك إضافة حقل timestamp لاحقاً)
+        // ترتيب العناصر من الأحدث للأقدم
         items = dataList.reverse();
         updateStats();
         renderUI();
@@ -758,38 +758,38 @@
       if(item.type === 'offer') {
         const imagesList = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : (item.imageUrl ? [item.imageUrl] : []);
         let imagesText = '';
-        if(imagesList.length === 1) imagesText = `🖼️ رابط الصورة: ${imagesList[0]}\n`;
+        if(imagesList.length === 1) imagesText = `رابط الصورة: ${imagesList[0]}\n`;
         else if (imagesList.length > 1) {
-            imagesText = `🖼️ روابط الصور:\n` + imagesList.map((img, index) => ` ${index + 1}- ${img}`).join('\n') + '\n';
+            imagesText = `روابط الصور:\n` + imagesList.map((img, index) => ` ${index + 1}- ${img}`).join('\n') + '\n';
         }
 
-        text = `🌟 عرض عقاري مميز 🌟\n\n` +
-               `📌 رقم المرجع: ${item.id}\n` +
-               `🏢 نوع العقار: ${item.propertyType} (${item.offerType})\n` +
-               `📍 الموقع: ${item.city} - حي ${item.district || 'غير محدد'}\n` +
-               `🛣️ الشارع: ${item.street || '-'} (${item.streetCount || '-'})\n` +
-               `📐 المساحة: ${item.landArea || '-'} م²\n` +
-               `📏 الأطوال: ${item.dimensions || '-'}\n` +
-               `🛏️ الغرف: ${item.rooms || '-'} | 🛁 دورات المياه: ${item.bathrooms || '-'}\n` +
-               (item.propertyAge ? `🏗️ عمر العقار: ${item.propertyAge}\n` : '') +
-               `💰 السعر: ${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}\n` +
-               (item.rentIncome ? `💵 الدخل الإيجاري: ${Number(item.rentIncome).toLocaleString()} ر.س\n` : '') +
-               (item.roi ? `📈 العائد الاستثماري: ${item.roi}% سنوياً\n` : '') +
-               (item.mapUrl ? `📍 رابط الموقع: ${item.mapUrl}\n` : '') +
+        text = `عرض عقاري مميز\n\n` +
+               `رقم المرجع: ${item.id}\n` +
+               `نوع العقار: ${item.propertyType} (${item.offerType})\n` +
+               `الموقع: ${item.city} - حي ${item.district || 'غير محدد'}\n` +
+               `الشارع: ${item.street || '-'} (${item.streetCount || '-'})\n` +
+               `المساحة: ${item.landArea || '-'} م²\n` +
+               `الأطوال: ${item.dimensions || '-'}\n` +
+               `الغرف: ${item.rooms || '-'} | دورات المياه: ${item.bathrooms || '-'}\n` +
+               (item.propertyAge ? `عمر العقار: ${item.propertyAge}\n` : '') +
+               `السعر: ${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}\n` +
+               (item.rentIncome ? `الدخل الإيجاري: ${Number(item.rentIncome).toLocaleString()} ر.س\n` : '') +
+               (item.roi ? `العائد الاستثماري: ${item.roi}% سنوياً\n` : '') +
+               (item.mapUrl ? `رابط الموقع: ${item.mapUrl}\n` : '') +
                imagesText +
-               (item.otherFeatures ? `✨ مميزات إضافية: ${item.otherFeatures}\n` : '') +
+               (item.otherFeatures ? `مميزات إضافية: ${item.otherFeatures}\n` : '') +
                `\nللتواصل: ${item.ownerName} - ${item.phone}`;
       } else {
-         text = `🎯 طلب عقاري 🎯\n\n` +
-               `📌 رقم المرجع: ${item.id}\n` +
-               `🏢 نوع العقار المطلوب: ${item.propertyType} (${item.requestType})\n` +
-               `📍 المدينة: ${item.city}\n` +
-               `🏘️ الأحياء المستهدفة: ${item.districts || 'غير محدد'}\n` +
-               `💰 الميزانية القصوى: ${item.priceMax ? Number(item.priceMax).toLocaleString() + ' ر.س' : 'غير محدد'}\n` +
-               `📐 المساحة الدنيا: ${item.areaMin ? item.areaMin + ' م²' : '-'}\n` +
-               `⏳ موعد الاحتياج: ${item.urgency || '-'}\n` +
-               `💳 طريقة الدفع: ${item.paymentMethod || '-'}\n` +
-               (item.details ? `📝 تفاصيل إضافية: ${item.details}\n` : '') +
+         text = `طلب عقاري\n\n` +
+               `رقم المرجع: ${item.id}\n` +
+               `نوع العقار المطلوب: ${item.propertyType} (${item.requestType})\n` +
+               `المدينة: ${item.city}\n` +
+               `الأحياء المستهدفة: ${item.districts || 'غير محدد'}\n` +
+               `الميزانية القصوى: ${item.priceMax ? Number(item.priceMax).toLocaleString() + ' ر.س' : 'غير محدد'}\n` +
+               `المساحة الدنيا: ${item.areaMin ? item.areaMin + ' م²' : '-'}\n` +
+               `موعد الاحتياج: ${item.urgency || '-'}\n` +
+               `طريقة الدفع: ${item.paymentMethod || '-'}\n` +
+               (item.details ? `تفاصيل إضافية: ${item.details}\n` : '') +
                `\nللتواصل: ${item.ownerName} - ${item.phone}`;
       }
 
