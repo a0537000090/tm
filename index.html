@@ -11,7 +11,6 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
     body { font-family: 'Cairo', sans-serif; }
-    /* إخفاء شريط التمرير للسلايدر مع الحفاظ على إمكانية السحب */
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
@@ -33,14 +32,14 @@
         </div>
         <div>
           <h1 class="text-lg font-black tracking-wide text-white">منصة عبدالله آل يحيى</h1>
-          <p class="text-xs text-slate-400">النظام السحابي الشامل للعروض والطلبات العقارية</p>
+          <p class="text-xs text-slate-400">النظام السحابي الشامل</p>
         </div>
       </div>
 
       <div class="flex items-center gap-3">
         <div id="auth-container"></div>
 
-        <div class="relative">
+        <div id="notifications-container" class="relative hidden">
           <button onclick="toggleNotifications()" class="relative p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 transition border border-slate-700">
             <i data-lucide="bell" class="w-5 h-5"></i>
             <span class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-slate-950 rounded-full text-xs font-black flex items-center justify-center shadow-lg">1</span>
@@ -64,8 +63,22 @@
     </div>
   </header>
 
-  <!-- Main Container -->
-  <div class="container mx-auto px-4 py-6">
+  <!-- Guest / Dummy View (يظهر فقط لغير المصرح لهم) -->
+  <div id="guest-view" class="container mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[70vh] text-center">
+    <div class="w-24 h-24 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-6 shadow-2xl">
+      <i data-lucide="lock" class="w-10 h-10 text-emerald-500"></i>
+    </div>
+    <h2 class="text-3xl font-black text-white mb-4">نظام إدارة الأملاك والعروض الخاص</h2>
+    <p class="text-slate-400 max-w-md mx-auto mb-8 leading-relaxed">
+      هذا النظام مخصص فقط للمسوقين والمدراء المعتمدين لدى منصة عبدالله آل يحيى العقارية. يرجى تسجيل الدخول بحسابك المصرح للوصول إلى العروض والطلبات.
+    </p>
+    <button onclick="handleGoogleLogin()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-8 py-4 rounded-2xl shadow-lg shadow-emerald-900/30 flex items-center gap-3 transition">
+      <i data-lucide="log-in" class="w-5 h-5"></i> تسجيل دخول المسوقين
+    </button>
+  </div>
+
+  <!-- Private Main Container (يظهر فقط بعد تسجيل الدخول الناجح) -->
+  <div id="private-view" class="container mx-auto px-4 py-6 hidden">
     
     <!-- Stats Row -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -203,13 +216,6 @@
     window.deleteDoc = deleteDoc;
     window.doc = doc;
     window.onSnapshot = onSnapshot;
-
-    // دالة لتسجيل الدخول كزائر إذا لم يكن هناك أي حساب مسجل
-    window.initAuth = async () => {
-      try {
-        await signInAnonymously(auth);
-      } catch (err) { console.error("Auth error:", err); }
-    };
     
     // ==========================================
     // قائمة الإيميلات المصرح لها بالدخول (المدراء)
@@ -221,30 +227,26 @@
 
     onAuthStateChanged(auth, async (user) => {
       window.currentUser = user;
-      if (user) {
-        if (!user.isAnonymous) {
-          // فحص هل الإيميل موجود ضمن القائمة المصرح لها؟
-          if (ALLOWED_EMAILS.includes(user.email)) {
-            window.isAuthenticated = true;
-            renderAuth();
-            fetchItems();
-          } else {
-            // الإيميل غير مصرح له
-            window.isAuthenticated = false;
-            showToast('عفواً، هذا الحساب غير مصرح له بالدخول كمدير');
-            await window.signOut(window.auth);
-            // سيقوم النظام تلقائياً بتحويله لحساب زائر بعد تسجيل الخروج
-          }
-        } else {
-          // حساب زائر (مجهول)
-          window.isAuthenticated = false;
+      
+      // إذا كان المستخدم مسجل دخول باستخدام جوجل وليس زائر (Anonymous)
+      if (user && !user.isAnonymous) {
+        // التحقق من قائمة الإيميلات المصرح لها
+        if (ALLOWED_EMAILS.includes(user.email)) {
+          window.isAuthenticated = true;
           renderAuth();
-          fetchItems();
+          fetchItems(); // جلب البيانات فقط بعد التأكد من الصلاحية
+        } else {
+          // الإيميل غير مصرح له
+          window.isAuthenticated = false;
+          showToast('عفواً، هذا الحساب غير مصرح له بالدخول كمدير');
+          await window.signOut(window.auth);
+          renderAuth();
         }
       } else {
-        // لا يوجد مستخدم، قم بتهيئة حساب الزائر فقط في هذه الحالة
+        // زائر غير مسجل الدخول، أو مسجل كزائر (Anonymous)
         window.isAuthenticated = false;
-        window.initAuth(); 
+        renderAuth();
+        // لن نقوم باستدعاء fetchItems() هنا أبداً لضمان بقاء البيانات محمية
       }
     });
   </script>
@@ -256,6 +258,7 @@
     let addMode = 'offer';
     let items = [];
     let editingDocId = null;
+    let unsubscribeSnapshot = null;
 
     async function handleGoogleLogin() {
       if (!window.auth || !window.GoogleAuthProvider) return;
@@ -270,14 +273,25 @@
       try {
         await window.signOut(window.auth);
         showToast('تم تسجيل الخروج بنجاح');
+        // تفريغ البيانات من الواجهة فوراً
+        items = [];
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
       } catch (error) { console.error(error); }
     }
 
     function renderAuth() {
       const container = document.getElementById('auth-container');
       const addContainer = document.getElementById('add-btn-container');
+      const guestView = document.getElementById('guest-view');
+      const privateView = document.getElementById('private-view');
+      const notifications = document.getElementById('notifications-container');
       
       if (window.isAuthenticated) {
+        // إظهار واجهة النظام الحقيقية وإخفاء الواجهة الوهمية
+        guestView.classList.add('hidden');
+        privateView.classList.remove('hidden');
+        notifications.classList.remove('hidden');
+
         container.innerHTML = `
           <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -293,6 +307,11 @@
           </button>
         `;
       } else {
+        // إظهار الواجهة الوهمية وإخفاء النظام الحقيقي
+        guestView.classList.remove('hidden');
+        privateView.classList.add('hidden');
+        notifications.classList.add('hidden');
+
         container.innerHTML = `
           <button onclick="handleGoogleLogin()" class="bg-white text-slate-900 hover:bg-slate-200 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition shadow-sm">
             <i data-lucide="log-in" class="w-4 h-4"></i> دخول المسوقين
@@ -301,18 +320,18 @@
         addContainer.innerHTML = '';
       }
       lucide.createIcons();
-      renderUI();
     }
 
     function fetchItems() {
-      if (!window.db) return;
+      if (!window.db || !window.isAuthenticated) return;
       const colRef = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'properties_v3');
-      window.onSnapshot(colRef, (snapshot) => {
+      
+      // حفظ دالة الإلغاء لإيقاف الاستماع إذا سجل المستخدم خروجه
+      unsubscribeSnapshot = window.onSnapshot(colRef, (snapshot) => {
         const dataList = [];
         snapshot.forEach((docSnap) => {
           dataList.push({ id_doc: docSnap.id, ...docSnap.data() });
         });
-        // ترتيب العناصر من الأحدث للأقدم
         items = dataList.reverse();
         updateStats();
         renderUI();
@@ -364,6 +383,7 @@
     }
 
     function renderUI() {
+      if (!window.isAuthenticated) return;
       const container = document.getElementById('content-container');
       const searchVal = document.getElementById('search-input').value.toLowerCase();
       const typeVal = document.getElementById('filter-type').value;
@@ -415,7 +435,6 @@
               const isOffer = item.type === 'offer';
               const matches = getMatches(item);
               const hasMatch = matches.length > 0;
-              // معالجة الصور المتعددة
               const imagesList = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : (item.imageUrl ? [item.imageUrl] : []);
               let imagesHtmlRender = '';
               
@@ -544,7 +563,6 @@
       }
     }
 
-    // دالة لإضافة حقل إدخال صورة جديدة
     function addImageInput(value = '') {
       const container = document.getElementById('images-container');
       const div = document.createElement('div');
@@ -618,7 +636,6 @@
           </div>
         `;
         
-        // إضافة حقول الصور الموجودة مسبقاً (أو حقل فارغ واحد إذا كان جديداً)
         const imagesList = data.imageUrls && data.imageUrls.length > 0 ? data.imageUrls : (data.imageUrl ? [data.imageUrl] : ['']);
         imagesList.forEach(img => addImageInput(img));
 
@@ -693,10 +710,8 @@
         payload.deedNumber = document.getElementById('f-deed-num').value;
         payload.otherFeatures = document.getElementById('f-other').value;
         
-        // تجميع روابط الصور وإضافتها في المصفوفة
         const imageInputs = document.querySelectorAll('.f-img-input');
         payload.imageUrls = Array.from(imageInputs).map(input => input.value).filter(val => val.trim() !== '');
-        // لضمان التوافقية السابقة في حالة صورة واحدة
         payload.imageUrl = payload.imageUrls.length > 0 ? payload.imageUrls[0] : '';
         
       } else {
@@ -760,10 +775,10 @@
         let imagesText = '';
         if(imagesList.length === 1) imagesText = `رابط الصورة: ${imagesList[0]}\n`;
         else if (imagesList.length > 1) {
-            imagesText = `روابط الصور:\n` + imagesList.map((img, index) => ` ${index + 1}- ${img}`).join('\n') + '\n';
+            imagesText = `روابط الصور:\n` + imagesList.map((img, index) => `${index + 1}- ${img}`).join('\n') + '\n';
         }
 
-        text = `عرض عقاري مميز\n\n` +
+        text = `عرض عقاري\n\n` +
                `رقم المرجع: ${item.id}\n` +
                `نوع العقار: ${item.propertyType} (${item.offerType})\n` +
                `الموقع: ${item.city} - حي ${item.district || 'غير محدد'}\n` +
@@ -860,11 +875,9 @@
             .title { color: #0f172a; font-size: 28px; font-weight: 900; margin-bottom: 5px; }
             .subtitle { color: #10b981; font-size: 18px; font-weight: bold;}
             
-            /* تنسيق الصورة الواحدة */
             .single-img-container { width: 100%; height: 350px; background: #f1f5f9; border-radius: 12px; overflow: hidden; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
             .single-img-container img { width: 100%; height: 100%; object-fit: cover; }
             
-            /* تنسيق الصور المتعددة */
             .images-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
             .images-grid img { width: 100%; height: 250px; object-fit: cover; border-radius: 12px; }
 
