@@ -717,6 +717,8 @@
                `💰 السعر: ${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}\n` +
                (item.rentIncome ? `💵 الدخل الإيجاري: ${Number(item.rentIncome).toLocaleString()} ر.س\n` : '') +
                (item.roi ? `📈 العائد الاستثماري: ${item.roi}% سنوياً\n` : '') +
+               (item.mapUrl ? `📍 رابط الموقع: ${item.mapUrl}\n` : '') +
+               (item.imageUrl ? `🖼️ رابط الصورة: ${item.imageUrl}\n` : '') +
                (item.otherFeatures ? `✨ مميزات إضافية: ${item.otherFeatures}\n` : '') +
                `\nللتواصل: ${item.ownerName} - ${item.phone}`;
       } else {
@@ -759,7 +761,9 @@
           <div class="box"><div class="label">السعر</div><div class="value">${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}</div></div>
           <div class="box"><div class="label">عمر العقار</div><div class="value">${item.propertyAge || '-'}</div></div>
           <div class="box"><div class="label">الغرف / دورات المياه</div><div class="value">${item.rooms || '-'} غرف / ${item.bathrooms || '-'} حمامات</div></div>
+          ${item.rentIncome ? `<div class="box"><div class="label">الدخل الإيجاري</div><div class="value">${Number(item.rentIncome).toLocaleString()} ر.س</div></div>` : ''}
           ${item.roi ? `<div class="box"><div class="label">العائد الاستثماري</div><div class="value" style="color:#10b981;">${item.roi}% سنوياً</div></div>` : ''}
+          ${item.mapUrl ? `<div class="box" style="grid-column: span 2;"><div class="label">رابط الموقع (خريطة جوجل)</div><div class="value"><a href="${item.mapUrl}" target="_blank" style="color: #10b981; text-decoration: none; word-break: break-all; font-size: 15px;">${item.mapUrl}</a></div></div>` : ''}
           ${item.otherFeatures ? `<div class="box" style="grid-column: span 2;"><div class="label">مميزات إضافية</div><div class="value">${item.otherFeatures}</div></div>` : ''}
         `;
       } else {
@@ -813,7 +817,7 @@
           </div>
           <script>
             window.onload = function() { setTimeout(function() { window.print(); }, 800); }
-          <\\/script>
+          <\/script>
         </body>
         </html>
       `;
