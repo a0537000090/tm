@@ -205,6 +205,22 @@
     </div>
   </div>
 
+  <!-- Detail View Modal (نافذة تفاصيل العرض/الطلب الكاملة) -->
+  <div id="detail-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto hidden">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl max-h-[92vh] flex flex-col">
+      <div class="p-4 bg-slate-950 border-b border-slate-800 flex justify-between items-center shrink-0">
+        <div class="flex items-center gap-3">
+          <span id="detail-badge" class="text-xs font-bold px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"></span>
+          <h3 id="detail-modal-title" class="text-base font-black text-white">تفاصيل السجل</h3>
+        </div>
+        <button onclick="closeDetailModal()" class="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div id="detail-modal-body" class="p-6 overflow-y-auto space-y-6 flex-1">
+        <!-- سيتم تعبئة التفاصيل ديناميكياً هنا -->
+      </div>
+    </div>
+  </div>
+
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -497,7 +513,6 @@
         `;
         
         setTimeout(() => {
-          // تعريف طبقات الخرائط
           const googleStreets = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ar&x={x}&y={y}&z={z}', {
               attribution: '&copy; Google Maps'
           });
@@ -506,14 +521,12 @@
               attribution: '&copy; Google Maps'
           });
 
-          // إنشاء الخريطة وتحديد الطبقة الافتراضية
           const map = L.map('main-map', {
               center: [24.7136, 46.6753],
               zoom: 6,
-              layers: [googleStreets] // الطبقة الافتراضية للخريطة الرئيسية
+              layers: [googleStreets]
           });
 
-          // إضافة عنصر التحكم بالطبقات
           const baseMaps = {
               "🗺️ خريطة الشوارع": googleStreets,
               "🌍 قمر صناعي": googleSatellite
@@ -564,7 +577,7 @@
                         <div class="text-xs text-slate-500 mb-2">${item.city} ${item.district ? '- ' + item.district : ''}</div>
                         ${isOffer && item.price ? `<div class="font-black text-emerald-600 text-sm mb-2">${Number(item.price).toLocaleString()} ر.س</div>` : ''}
                         ${!isOffer && item.priceMax ? `<div class="font-black text-sky-600 text-sm mb-2">الميزانية: ${Number(item.priceMax).toLocaleString()} ر.س</div>` : ''}
-                        <button onclick="navigator.clipboard.writeText('${item.id}'); showToast('تم نسخ رقم الإعلان للبحث عنه');" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-slate-700 w-full mb-1 transition font-bold">رقم الإعلان: ${item.id}</button>
+                        <button onclick="openDetailModal('${item.id_doc}')" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl w-full mb-1 transition font-bold shadow">عرض التفاصيل الكاملة</button>
                     </div>
                 `;
 
@@ -597,22 +610,19 @@
               
               if (isOffer && imagesList.length > 0) {
                 imagesHtmlRender = `
-                  <div class="relative h-56 overflow-hidden bg-slate-950 group/slider">
+                  <div class="relative h-56 overflow-hidden bg-slate-950 group/slider cursor-pointer" onclick="openDetailModal('${item.id_doc}')">
                     <div class="flex overflow-x-auto snap-x snap-mandatory h-full w-full hide-scrollbar scroll-smooth" id="slider-${item.id_doc}" dir="ltr">
-                      ${imagesList.map(img => `<div class="snap-center shrink-0 w-full h-full"><img src="${img}" alt="عقار" class="w-full h-full object-cover" /></div>`).join('')}
+                      ${imagesList.map(img => `<div class="snap-center shrink-0 w-full h-full"><img src="${img}" alt="عقار" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>`).join('')}
                     </div>
                     ${imagesList.length > 1 ? `
-                      <button onclick="document.getElementById('slider-${item.id_doc}').scrollBy({left: -300, behavior: 'smooth'})" class="absolute top-1/2 left-2 -translate-y-1/2 bg-slate-900/80 text-white p-1.5 rounded-full opacity-0 group-hover/slider:opacity-100 transition z-10 hover:bg-emerald-500 shadow"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                      <button onclick="document.getElementById('slider-${item.id_doc}').scrollBy({left: 300, behavior: 'smooth'})" class="absolute top-1/2 right-2 -translate-y-1/2 bg-slate-900/80 text-white p-1.5 rounded-full opacity-0 group-hover/slider:opacity-100 transition z-10 hover:bg-emerald-500 shadow"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                      <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10 bg-slate-900/60 px-2 py-1.5 rounded-full backdrop-blur">
-                        ${imagesList.map((_, i) => `<div class="w-1.5 h-1.5 rounded-full bg-white/70"></div>`).join('')}
-                      </div>
+                      <button onclick="event.stopPropagation(); document.getElementById('slider-${item.id_doc}').scrollBy({left: -300, behavior: 'smooth'})" class="absolute top-1/2 left-2 -translate-y-1/2 bg-slate-900/80 text-white p-1.5 rounded-full opacity-0 group-hover/slider:opacity-100 transition z-10 hover:bg-emerald-500 shadow"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                      <button onclick="event.stopPropagation(); document.getElementById('slider-${item.id_doc}').scrollBy({left: 300, behavior: 'smooth'})" class="absolute top-1/2 right-2 -translate-y-1/2 bg-slate-900/80 text-white p-1.5 rounded-full opacity-0 group-hover/slider:opacity-100 transition z-10 hover:bg-emerald-500 shadow"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
                     ` : ''}
                     <div class="absolute top-4 right-4 flex gap-2 z-10">
                       <div class="bg-slate-950/80 backdrop-blur text-emerald-400 font-bold px-3 py-1 rounded-xl text-xs border border-slate-800">${item.offerType || 'بيع'}</div>
                       ${item.status === 'مباع' ? `<div class="bg-rose-500/90 backdrop-blur text-white font-bold px-3 py-1 rounded-xl text-xs border border-rose-600 shadow-lg">تم البيع</div>` : ''}
                     </div>
-                    <button onclick="toggleFavorite('${item.id_doc}')" class="absolute top-4 left-4 p-2.5 rounded-full backdrop-blur border transition z-10 ${item.isFavorite ? 'bg-rose-500 text-white border-rose-600' : 'bg-slate-950/60 text-slate-300 border-slate-800'}">
+                    <button onclick="event.stopPropagation(); toggleFavorite('${item.id_doc}')" class="absolute top-4 left-4 p-2.5 rounded-full backdrop-blur border transition z-10 ${item.isFavorite ? 'bg-rose-500 text-white border-rose-600' : 'bg-slate-950/60 text-slate-300 border-slate-800'}">
                       <i data-lucide="heart" class="w-4 h-4"></i>
                     </button>
                   </div>
@@ -628,19 +638,19 @@
                         <span class="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">${isOffer ? 'عرض عقاري' : 'طلب عميل'} • ${item.propertyType}</span>
                         ${isOffer ? `<span class="text-xs font-bold px-3 py-1 rounded-lg border ${item.status === 'مباع' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-sky-500/10 text-sky-400 border-sky-500/20'}">${item.status || 'متاح'}</span>` : ''}
                       </div>
-                      <span class="text-xs text-slate-400 font-mono">${item.id}</span>
+                      <span onclick="openDetailModal('${item.id_doc}')" class="text-xs text-emerald-400 hover:underline font-mono cursor-pointer font-bold">${item.id}</span>
                     </div>
-                    <h3 class="text-lg font-bold text-white mb-2">${isOffer ? `${item.propertyType} في ${item.city} - ${item.district || ''}` : `طلب ${item.propertyType} في ${item.city}`}</h3>
+                    <h3 onclick="openDetailModal('${item.id_doc}')" class="text-lg font-bold text-white mb-2 cursor-pointer hover:text-emerald-400 transition">${isOffer ? `${item.propertyType} في ${item.city} - ${item.district || ''}` : `طلب ${item.propertyType} في ${item.city}`}</h3>
                     
                     ${hasMatch ? `
                     <div class="mb-4 bg-emerald-500/10 border border-emerald-500/30 p-2.5 rounded-xl text-[11px] text-emerald-400 font-bold flex flex-col gap-1.5">
                       <div class="flex items-center gap-1.5"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i>يوجد ${isOffer ? 'طلب' : 'عرض'} مطابق:</div>
                       <div class="flex flex-wrap gap-1">
-                        ${matches.map(m => `<span class="bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-300">${m.id}</span>`).join('')}
+                        ${matches.map(m => `<span class="bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-300 cursor-pointer" onclick="openDetailModal('${m.id_doc}')">${m.id}</span>`).join('')}
                       </div>
                     </div>` : ''}
 
-                    <div class="space-y-2 text-sm text-slate-300 mb-6 flex-1">
+                    <div class="space-y-2 text-sm text-slate-300 mb-6 flex-1 cursor-pointer" onclick="openDetailModal('${item.id_doc}')">
                       ${isOffer ? `
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الشارع:</span><span class="font-medium text-white">${item.street || '-'} (${item.streetCount || '-'})</span></div>
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">المساحة:</span><span class="font-medium text-white">${item.landArea || '-'} م²</span></div>
@@ -659,8 +669,9 @@
                     <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
                       <div class="text-xs text-slate-400 flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i>${item.ownerName || 'مقدم الطلب'}</div>
                       <div class="flex items-center gap-1.5">
-                        <button onclick="shareItem('${item.id_doc}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-xl transition" title="مشاركة بكامل التفاصيل"><i data-lucide="share-2" class="w-4 h-4"></i></button>
-                        <button onclick="exportPDF('${item.id_doc}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-sky-400 rounded-xl transition" title="تصدير بروشور PDF"><i data-lucide="download" class="w-4 h-4"></i></button>
+                        <button onclick="openDetailModal('${item.id_doc}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition text-xs font-bold flex items-center gap-1"><i data-lucide="eye" class="w-3.5 h-3.5"></i> التفاصيل</button>
+                        <button onclick="shareItem('${item.id_doc}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-xl transition" title="مشاركة"><i data-lucide="share-2" class="w-4 h-4"></i></button>
+                        <button onclick="exportPDF('${item.id_doc}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-sky-400 rounded-xl transition" title="تصدير PDF"><i data-lucide="download" class="w-4 h-4"></i></button>
                         ${window.isAuthenticated ? `
                           <button onclick="openEditModal('${item.id_doc}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-xl transition" title="تعديل"><i data-lucide="edit" class="w-4 h-4"></i></button>
                           <button onclick="deleteItem('${item.id_doc}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded-xl transition" title="حذف"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
@@ -675,6 +686,109 @@
         `;
       }
       lucide.createIcons();
+    }
+
+    // دوال نافذة تفاصيل السجل
+    function openDetailModal(docId) {
+      const item = items.find(i => i.id_doc === docId);
+      if (!item) return;
+
+      const isOffer = item.type === 'offer';
+      document.getElementById('detail-badge').innerText = isOffer ? 'عرض عقاري' : 'طلب عميل';
+      document.getElementById('detail-modal-title').innerText = `${isOffer ? item.propertyType : 'طلب ' + item.propertyType} (${item.id})`;
+
+      const imagesList = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : (item.imageUrl ? [item.imageUrl] : []);
+      let imagesGalleryHtml = '';
+      if (isOffer && imagesList.length > 0) {
+        imagesGalleryHtml = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+            ${imagesList.map(img => `<div class="h-56 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800"><img src="${img}" alt="صورة العقار" class="w-full h-full object-cover" /></div>`).join('')}
+          </div>
+        `;
+      }
+
+      let matchesHtml = '';
+      const matches = getMatches(item);
+      if (matches.length > 0) {
+        matchesHtml = `
+          <div class="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-2xl mb-6">
+            <h4 class="text-xs font-bold text-emerald-400 mb-2 flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4"></i> مطابقات ذكية متوفرة في النظام (${matches.length}):</h4>
+            <div class="flex flex-wrap gap-2">
+              ${matches.map(m => `
+                <div onclick="openDetailModal('${m.id_doc}')" class="bg-slate-900 border border-emerald-500/40 px-3 py-1.5 rounded-xl text-xs text-white cursor-pointer hover:bg-emerald-600/20 transition flex items-center gap-2">
+                  <span class="font-bold text-emerald-400">${m.id}</span>
+                  <span class="text-slate-300">${m.propertyType} - ${m.city}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      let contentGridHtml = '';
+      if (isOffer) {
+        contentGridHtml = `
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">نوع العملية</div><div class="text-base font-black text-white">${item.offerType || 'بيع'}</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">حالة العقار</div><div class="text-base font-black text-emerald-400">${item.status || 'متاح'}</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">السعر المطلوب</div><div class="text-base font-black text-emerald-400">${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">المدينة / الحي</div><div class="text-base font-bold text-white">${item.city} - ${item.district || '-'}</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">الشارع والأطوال</div><div class="text-base font-bold text-white">${item.street || '-'} (${item.streetCount || '-'})</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">مساحة الأرض والأدوار</div><div class="text-base font-bold text-white">${item.landArea || '-'} م² • ${item.floors || '-'} أدوار</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">الغرف ودورات المياه</div><div class="text-base font-bold text-white">${item.rooms || '-'} غرف • ${item.bathrooms || '-'} حمامات</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">عمر العقار</div><div class="text-base font-bold text-white">${item.propertyAge || '-'}</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">العائد الاستثماري</div><div class="text-base font-bold text-emerald-400">${item.roi ? item.roi + '%' : '-'}</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">رقم المخطط / القطعة</div><div class="text-base font-bold text-white">${item.planNumber || '-'} / ${item.plotNumber || '-'}</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">حالة الصك ورقمها</div><div class="text-base font-bold text-white">${item.deedType || '-'} (${item.deedNumber || '-'})</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">قابل للتفاوض</div><div class="text-base font-bold text-white">${item.isNegotiable || 'نعم'}</div></div>
+          </div>
+          ${item.otherFeatures ? `<div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">مميزات إضافية</div><div class="text-sm text-white">${item.otherFeatures}</div></div>` : ''}
+        `;
+      } else {
+        contentGridHtml = `
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">نوع الطلب</div><div class="text-base font-black text-white">${item.requestType || 'شراء'} (${item.requestRole || '-'})</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">الميزانية القصوى</div><div class="text-base font-black text-emerald-400">${item.priceMax ? Number(item.priceMax).toLocaleString() + ' ر.س' : 'غير محدد'}</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">المساحة الدنيا</div><div class="text-base font-bold text-white">${item.areaMin ? item.areaMin + ' م²' : '-'}</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">المدينة والأحياء المستهدفة</div><div class="text-base font-bold text-white">${item.city} - ${item.districts || '-'}</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">موعد الاحتياج</div><div class="text-base font-bold text-white">${item.urgency || '-'}</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">طريقة الدفع</div><div class="text-base font-bold text-white">${item.paymentMethod || '-'}</div></div>
+          </div>
+          ${item.details ? `<div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">تفاصيل إضافية</div><div class="text-sm text-white">${item.details}</div></div>` : ''}
+        `;
+      }
+
+      let locationHtml = `
+        <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div>
+            <div class="text-xs text-slate-400 mb-1">المسؤول عن السجل</div>
+            <div class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-emerald-400"></i> ${item.ownerName || '-'} • <i data-lucide="phone" class="w-4 h-4 text-emerald-400"></i> ${item.phone || '-'}</div>
+          </div>
+          <div class="flex gap-2">
+            ${item.mapUrl ? `<a href="${item.mapUrl}" target="_blank" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5"><i data-lucide="map" class="w-4 h-4 text-emerald-400"></i> خريطة جوجل</a>` : ''}
+            ${item.lat && item.lng ? `<a href="https://maps.google.com/?q=${item.lat},${item.lng}" target="_blank" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5"><i data-lucide="navigation" class="w-4 h-4 text-sky-400"></i> الإحداثيات</a>` : ''}
+          </div>
+        </div>
+      `;
+
+      let actionsHtml = `
+        <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-800 justify-end">
+          <button onclick="shareItem('${item.id_doc}')" class="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold text-xs rounded-xl transition flex items-center gap-2"><i data-lucide="share-2" class="w-4 h-4"></i> مشاركة التفاصيل</button>
+          <button onclick="exportPDF('${item.id_doc}')" class="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-sky-400 font-bold text-xs rounded-xl transition flex items-center gap-2"><i data-lucide="download" class="w-4 h-4"></i> تصدير بروشور PDF</button>
+          ${window.isAuthenticated ? `
+            <button onclick="closeDetailModal(); openEditModal('${item.id_doc}')" class="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-xl transition flex items-center gap-2"><i data-lucide="edit" class="w-4 h-4"></i> تعديل</button>
+            <button onclick="closeDetailModal(); deleteItem('${item.id_doc}')" class="px-5 py-3 bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white font-bold text-xs rounded-xl transition flex items-center gap-2 border border-rose-500/20"><i data-lucide="trash-2" class="w-4 h-4"></i> حذف</button>
+          ` : ''}
+        </div>
+      `;
+
+      document.getElementById('detail-modal-body').innerHTML = imagesGalleryHtml + matchesHtml + contentGridHtml + locationHtml + actionsHtml;
+      document.getElementById('detail-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detail-modal').classList.add('hidden');
     }
 
     function applyFilters() { renderUI(); }
@@ -731,7 +845,6 @@
             const startLat = lat ? parseFloat(lat) : 24.7136;
             const startLng = lng ? parseFloat(lng) : 46.6753;
             
-            // تعريف الطبقات
             const googleStreets = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ar&x={x}&y={y}&z={z}', {
                 attribution: '&copy; Google Maps'
             });
@@ -739,14 +852,12 @@
                 attribution: '&copy; Google Maps'
             });
 
-            // إنشاء الخريطة والطبقة الافتراضية قمر صناعي
             pickerMap = L.map('picker-map', {
                 center: [startLat, startLng],
                 zoom: lat ? 15 : 5,
                 layers: [googleSatellite]
             });
             
-            // إضافة زر التبديل بين الطبقات
             const baseMaps = {
                 "🌍 قمر صناعي": googleSatellite,
                 "🗺️ خريطة الشوارع": googleStreets
@@ -949,7 +1060,6 @@
         `;
       }
       
-      // تشغيل خريطة التحديد بعد رسم الحقول
       initPickerMap(data.lat, data.lng);
     }
 
@@ -1212,3 +1322,5 @@
   </script>
 </body>
 </html>
+
+```
