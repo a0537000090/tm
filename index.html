@@ -275,9 +275,9 @@
     let appNotifications = [];
     let isInitialLoad = true;
     
-    // متغيرات الخريطة المصغرة في نافذة الإضافة
     let pickerMap = null;
     let pickerMarker = null;
+    let mapSyncTimeout; // متغير لتأخير قراءة الرابط حتى ينتهي المستخدم من اللصق
 
     async function handleGoogleLogin() {
       if (!window.auth || !window.GoogleAuthProvider) return;
@@ -489,21 +489,17 @@
       });
 
       if (viewMode === 'map') {
-        // إنشاء حاوية الخريطة الحقيقية
         container.innerHTML = `
           <div id="main-map" class="w-full h-[600px] bg-slate-900 rounded-3xl border border-slate-800 shadow-inner mb-10 z-0 relative"></div>
         `;
         
-        // تفعيل الخريطة بعد إنشاء الـ div
         setTimeout(() => {
-          const map = L.map('main-map').setView([24.7136, 46.6753], 6); // المركز الافتراضي (الرياض)
+          const map = L.map('main-map').setView([24.7136, 46.6753], 6);
           
-          // استخدام خرائط جوجل المباشرة لضمان وضوح الأسماء وعدم طلب مفتاح API
           L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ar&x={x}&y={y}&z={z}', {
               attribution: '&copy; Google Maps'
           }).addTo(map);
 
-          // إحداثيات افتراضية للمدن في حال لم يتم تحديد الموقع بدقة
           const cityCoords = {
             'الرياض': [24.7136, 46.6753],
             'جدة': [21.4858, 39.1925],
@@ -519,7 +515,6 @@
             let lat = parseFloat(item.lat);
             let lng = parseFloat(item.lng);
 
-            // إذا لم يكن هناك إحداثيات دقيقة، استخدم إحداثيات المدينة مع إضافة تشتت بسيط عشان ما تتطابق فوق بعض
             if ((!lat || !lng) && cityCoords[item.city]) {
                 lat = cityCoords[item.city][0] + (Math.random() - 0.5) * 0.05;
                 lng = cityCoords[item.city][1] + (Math.random() - 0.5) * 0.05;
@@ -529,7 +524,7 @@
                 bounds.push([lat, lng]);
                 const isOffer = item.type === 'offer';
                 const isSold = item.status === 'مباع';
-                const bgColor = isSold ? '#e11d48' : (isOffer ? '#10b981' : '#0ea5e9'); // أحمر للمباع، أخضر للعرض، أزرق للطلب
+                const bgColor = isSold ? '#e11d48' : (isOffer ? '#10b981' : '#0ea5e9');
                 const iconName = isOffer ? 'home' : 'user';
 
                 const markerHtml = `
@@ -540,7 +535,6 @@
                 
                 const customIcon = L.divIcon({ html: markerHtml, className: '', iconSize: [36, 36], iconAnchor: [18, 36], popupAnchor: [0, -36] });
                 
-                // تصميم النافذة المنبثقة عند الضغط على العلامة
                 const popupContent = `
                     <div class="text-right p-2 min-w-[200px]" dir="rtl" style="font-family: 'Cairo', sans-serif;">
                         <div class="flex justify-between items-center mb-1">
@@ -558,7 +552,6 @@
             }
           });
 
-          // ضبط إطار الخريطة ليحتوي جميع العلامات
           if (bounds.length > 0) {
               map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
           }
@@ -681,12 +674,11 @@
             pickerMarker = null;
         }
         setTimeout(() => {
-            const startLat = lat ? parseFloat(lat) : 24.7136; // الرياض افتراضياً
+            const startLat = lat ? parseFloat(lat) : 24.7136;
             const startLng = lng ? parseFloat(lng) : 46.6753;
             
             pickerMap = L.map('picker-map').setView([startLat, startLng], lat ? 15 : 5);
             
-            // استخدام قمر صناعي هجين من جوجل لتوضيح المباني والشوارع للتحديد الدقيق
             L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=ar&x={x}&y={y}&z={z}', {
                 attribution: '&copy; Google Maps'
             }).addTo(pickerMap);
@@ -708,9 +700,72 @@
                     pickerMarker = L.marker(e.latlng).addTo(pickerMap);
                 }
             });
-            // إصلاح مشكلة تحميل الخريطة داخل الأقسام المخفية
             pickerMap.invalidateSize();
         }, 300);
+    }
+
+    // دوال الاستخراج الذكي للإحداثيات من رابط جوجل ماب
+    function handleMapUrlInput(url) {
+        clearTimeout(mapSyncTimeout);
+        if (!url || !url.startsWith('http')) return;
+        
+        // ننتظر قليلاً حتى ينتهي المستخدم من اللصق
+        mapSyncTimeout = setTimeout(() => {
+            syncMapFromUrl(url);
+        }, 800);
+    }
+
+    async function syncMapFromUrl(url) {
+        showToast('جاري قراءة الرابط وتحديد الموقع أوتوماتيكياً... ⏳');
+        
+        let lat = null, lng = null;
+        
+        try {
+            let finalUrl = url;
+            let htmlContent = "";
+            
+            // إذا كان رابط قصير (goo.gl)، نقوم بفكه عبر بروكسي مجاني
+            if (url.includes('goo.gl')) {
+                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+                const data = await response.json();
+                finalUrl = data.status?.url || url; // الرابط بعد التوجيه
+                htmlContent = data.contents || "";
+            }
+            
+            // 1. محاولة استخراج الإحداثيات من الرابط النهائي مباشرة
+            let match = finalUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+            
+            // 2. إذا لم تكن في الرابط، نبحث في الكود المصدري للصفحة
+            if (!match && htmlContent) {
+                match = htmlContent.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || htmlContent.match(/ll=(-?\d+\.\d+),(-?\d+\.\d+)/);
+            }
+
+            if (match) {
+                lat = parseFloat(match[1]);
+                lng = parseFloat(match[2]);
+            }
+            
+            if (lat && lng) {
+                document.getElementById('f-lat').value = lat;
+                document.getElementById('f-lng').value = lng;
+                
+                // تحريك الخريطة وإضافة العلامة
+                if (pickerMap) {
+                    pickerMap.setView([lat, lng], 17); // تقريب عالي للموقع
+                    if (pickerMarker) {
+                        pickerMarker.setLatLng([lat, lng]);
+                    } else {
+                        pickerMarker = L.marker([lat, lng]).addTo(pickerMap);
+                    }
+                }
+                showToast('تم تحديد الموقع على الخريطة بنجاح ✅');
+            } else {
+                showToast('لم نتمكن من استخراج الإحداثيات من الرابط ❌');
+            }
+        } catch (error) {
+            console.error(error);
+            showToast('حدث خطأ أثناء قراءة الرابط ❌');
+        }
     }
 
     function openAddModal() {
@@ -779,7 +834,7 @@
               <div id="picker-map" class="w-full h-56 bg-slate-950 rounded-xl border border-slate-700 z-10 relative"></div>
               <input type="hidden" id="f-lat" value="${data.lat || ''}" />
               <input type="hidden" id="f-lng" value="${data.lng || ''}" />
-              <p class="text-[10px] text-slate-500 mt-1">اضغط على الخريطة لوضع علامة التحديد في موقع العقار.</p>
+              <p class="text-[10px] text-slate-500 mt-1">اضغط على الخريطة لوضع علامة التحديد، أو الصق رابط جوجل ماب أدناه وسيتم تحديده أوتوماتيكياً.</p>
           </div>
       `;
 
@@ -808,7 +863,7 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 mb-1">رقم المخطط</label><input type="text" id="f-plan" value="${data.planNumber || ''}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">رقم القطعة</label><input type="text" id="f-plot" value="${data.plotNumber || ''}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">رابط خريطة جوجل (كنص)</label><input type="text" id="f-map" value="${data.mapUrl || ''}" placeholder="https://maps.app.goo.gl/..." class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">رابط خريطة جوجل (كنص)</label><input type="text" id="f-map" value="${data.mapUrl || ''}" oninput="handleMapUrlInput(this.value)" placeholder="https://maps.app.goo.gl/..." class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الغرف</label><input type="text" id="f-rooms" value="${data.rooms || ''}" placeholder="5" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
@@ -862,13 +917,16 @@
           ${pickerHtml}
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">رابط خريطة جوجل (كنص)</label><input type="text" id="f-map" value="${data.mapUrl || ''}" oninput="handleMapUrlInput(this.value)" placeholder="https://maps.app.goo.gl/..." class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الميزانية القصوى (ر.س)</label><input type="number" id="f-price-max" value="${data.priceMax || ''}" placeholder="2000000" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">المساحة الدنيا (م²)</label><input type="number" id="f-area-min" value="${data.areaMin || ''}" placeholder="400" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">الأطوال المطلوبة</label><input type="text" id="f-dim" value="${data.dimensions || ''}" placeholder="20 في 20" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">الأطوال المطلوبة</label><input type="text" id="f-dim" value="${data.dimensions || ''}" placeholder="20 في 20" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">موعد الاحتياج</label><select id="f-urgency" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white"><option value="عاجل">عاجل</option><option value="خلال شهر">خلال شهر</option><option value="غير مستعجل">غير مستعجل</option></select></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">طريقة الدفع</label><select id="f-payment" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white"><option value="نقداً">نقداً</option><option value="تمويل بنكي">تمويل بنكي</option></select></div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الغرض</label><input type="text" id="f-purpose" value="${data.requestPurpose || 'السكن'}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
           <div><label class="block text-xs font-bold text-slate-400 mb-1">تفاصيل إضافية</label><textarea id="f-details" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white h-20">${data.details || ''}</textarea></div>
@@ -893,9 +951,12 @@
         city: document.getElementById('f-city').value,
         ownerName: document.getElementById('f-name').value,
         phone: document.getElementById('f-phone').value,
-        // حفظ الإحداثيات
+        
+        // حفظ رابط الخريطة والإحداثيات للطلبات والعروض معاً
+        mapUrl: document.getElementById('f-map') ? document.getElementById('f-map').value : '',
         lat: document.getElementById('f-lat') ? document.getElementById('f-lat').value : '',
         lng: document.getElementById('f-lng') ? document.getElementById('f-lng').value : '',
+        
         isFavorite: false,
         isMine: true
       };
@@ -910,7 +971,6 @@
         payload.dimensions = document.getElementById('f-dim').value;
         payload.planNumber = document.getElementById('f-plan').value;
         payload.plotNumber = document.getElementById('f-plot').value;
-        payload.mapUrl = document.getElementById('f-map').value;
         payload.rooms = document.getElementById('f-rooms').value;
         payload.bathrooms = document.getElementById('f-baths').value;
         payload.propertyAge = document.getElementById('f-age').value;
@@ -1021,6 +1081,7 @@
                `المساحة الدنيا: ${item.areaMin ? item.areaMin + ' م²' : '-'}\n` +
                `موعد الاحتياج: ${item.urgency || '-'}\n` +
                `طريقة الدفع: ${item.paymentMethod || '-'}\n` +
+               (item.mapUrl ? `رابط الموقع المستهدف: ${item.mapUrl}\n` : '') +
                (item.details ? `تفاصيل إضافية: ${item.details}\n` : '') +
                `\nللتواصل: ${item.ownerName} - ${item.phone}`;
       }
@@ -1077,6 +1138,7 @@
           <div class="box"><div class="label">طريقة الدفع</div><div class="value">${item.paymentMethod || '-'}</div></div>
           <div class="box"><div class="label">موعد الاحتياج</div><div class="value">${item.urgency || '-'}</div></div>
           <div class="box"><div class="label">الغرض</div><div class="value">${item.requestPurpose || '-'}</div></div>
+          ${item.mapUrl ? `<div class="box" style="grid-column: span 2;"><div class="label">رابط الموقع المستهدف (خريطة جوجل)</div><div class="value"><a href="${item.mapUrl}" target="_blank" style="color: #10b981; text-decoration: none; word-break: break-all; font-size: 15px;">${item.mapUrl}</a></div></div>` : ''}
           ${item.details ? `<div class="box" style="grid-column: span 2;"><div class="label">تفاصيل إضافية</div><div class="value">${item.details}</div></div>` : ''}
         `;
       }
