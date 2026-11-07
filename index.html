@@ -8,11 +8,16 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Leaflet CSS for Interactive Maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
     body { font-family: 'Cairo', sans-serif; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    /* إصلاح تداخل الخريطة مع النوافذ المنبثقة */
+    .leaflet-container { z-index: 10 !important; font-family: 'Cairo', sans-serif;}
+    .leaflet-popup-content-wrapper { border-radius: 16px; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen pb-16 selection:bg-emerald-500 selection:text-white">
@@ -196,6 +201,9 @@
     </div>
   </div>
 
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <!-- Firebase Integration Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -266,6 +274,10 @@
     let unsubscribeSnapshot = null;
     let appNotifications = [];
     let isInitialLoad = true;
+    
+    // متغيرات الخريطة المصغرة في نافذة الإضافة
+    let pickerMap = null;
+    let pickerMarker = null;
 
     async function handleGoogleLogin() {
       if (!window.auth || !window.GoogleAuthProvider) return;
@@ -477,22 +489,82 @@
       });
 
       if (viewMode === 'map') {
+        // إنشاء حاوية الخريطة الحقيقية
         container.innerHTML = `
-          <div class="relative w-full h-[600px] bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-inner mb-10">
-            <div class="absolute inset-0 opacity-40 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:24px_24px]"></div>
-            ${filtered.map((item, idx) => {
-              const top = 20 + ((idx * 15) % 60);
-              const left = 20 + ((idx * 25) % 60);
-              return `
-                <div class="absolute group z-10" style="top: ${top}%; left: ${left}%;">
-                  <div class="w-9 h-9 rounded-full border-2 border-slate-900 shadow-2xl flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2 cursor-pointer ${item.type === 'offer' ? 'bg-emerald-500 text-slate-950 font-bold' : 'bg-sky-500 text-slate-950 font-bold'}">
-                    <i data-lucide="${item.type === 'offer' ? 'home' : 'user'}" class="w-4 h-4"></i>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
+          <div id="main-map" class="w-full h-[600px] bg-slate-900 rounded-3xl border border-slate-800 shadow-inner mb-10 z-0 relative"></div>
         `;
+        
+        // تفعيل الخريطة بعد إنشاء الـ div
+        setTimeout(() => {
+          const map = L.map('main-map').setView([24.7136, 46.6753], 6); // المركز الافتراضي (الرياض)
+          
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+              attribution: '&copy; OpenStreetMap contributors'
+          }).addTo(map);
+
+          // إحداثيات افتراضية للمدن في حال لم يتم تحديد الموقع بدقة
+          const cityCoords = {
+            'الرياض': [24.7136, 46.6753],
+            'جدة': [21.4858, 39.1925],
+            'الدمام': [26.4207, 50.0888],
+            'مكة المكرمة': [21.3891, 39.8579],
+            'المدينة المنورة': [24.5247, 39.5692],
+            'الخبر': [26.2172, 50.1971]
+          };
+
+          const bounds = [];
+
+          filtered.forEach(item => {
+            let lat = parseFloat(item.lat);
+            let lng = parseFloat(item.lng);
+
+            // إذا لم يكن هناك إحداثيات دقيقة، استخدم إحداثيات المدينة مع إضافة تشتت بسيط عشان ما تتطابق فوق بعض
+            if ((!lat || !lng) && cityCoords[item.city]) {
+                lat = cityCoords[item.city][0] + (Math.random() - 0.5) * 0.05;
+                lng = cityCoords[item.city][1] + (Math.random() - 0.5) * 0.05;
+            }
+
+            if (lat && lng) {
+                bounds.push([lat, lng]);
+                const isOffer = item.type === 'offer';
+                const isSold = item.status === 'مباع';
+                const bgColor = isSold ? '#e11d48' : (isOffer ? '#10b981' : '#0ea5e9'); // أحمر للمباع، أخضر للعرض، أزرق للطلب
+                const iconName = isOffer ? 'home' : 'user';
+
+                const markerHtml = `
+                    <div style="background-color: ${bgColor}; width: 36px; height: 36px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white;">
+                        <i data-lucide="${iconName}" style="width: 18px; height: 18px;"></i>
+                    </div>
+                `;
+                
+                const customIcon = L.divIcon({ html: markerHtml, className: '', iconSize: [36, 36], iconAnchor: [18, 36], popupAnchor: [0, -36] });
+                
+                // تصميم النافذة المنبثقة عند الضغط على العلامة
+                const popupContent = `
+                    <div class="text-right p-2 min-w-[200px]" dir="rtl" style="font-family: 'Cairo', sans-serif;">
+                        <div class="flex justify-between items-center mb-1">
+                          <span class="font-bold text-slate-800 text-sm">${isOffer ? item.propertyType : 'طلب ' + item.propertyType}</span>
+                          ${isSold ? `<span class="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">مباع</span>` : ''}
+                        </div>
+                        <div class="text-xs text-slate-500 mb-2">${item.city} ${item.district ? '- ' + item.district : ''}</div>
+                        ${isOffer && item.price ? `<div class="font-black text-emerald-600 text-sm mb-2">${Number(item.price).toLocaleString()} ر.س</div>` : ''}
+                        ${!isOffer && item.priceMax ? `<div class="font-black text-sky-600 text-sm mb-2">الميزانية: ${Number(item.priceMax).toLocaleString()} ر.س</div>` : ''}
+                        <button onclick="navigator.clipboard.writeText('${item.id}'); showToast('تم نسخ رقم الإعلان للبحث عنه');" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-slate-700 w-full mb-1 transition font-bold">رقم الإعلان: ${item.id}</button>
+                    </div>
+                `;
+
+                L.marker([lat, lng], { icon: customIcon }).addTo(map).bindPopup(popupContent);
+            }
+          });
+
+          // ضبط إطار الخريطة ليحتوي جميع العلامات
+          if (bounds.length > 0) {
+              map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+          }
+
+          lucide.createIcons();
+        }, 100);
+
       } else {
         if (filtered.length === 0) {
           container.innerHTML = `<div class="text-center py-20 text-slate-500 font-bold">لا توجد نتائج مطابقة لعرضها</div>`;
@@ -600,6 +672,42 @@
       setTimeout(() => t.classList.add('hidden'), 4000);
     }
 
+    // دالة لتفعيل خريطة التحديد داخل النافذة المنبثقة
+    function initPickerMap(lat, lng) {
+        if (pickerMap) {
+            pickerMap.remove();
+            pickerMap = null;
+            pickerMarker = null;
+        }
+        setTimeout(() => {
+            const startLat = lat ? parseFloat(lat) : 24.7136; // الرياض افتراضياً
+            const startLng = lng ? parseFloat(lng) : 46.6753;
+            
+            pickerMap = L.map('picker-map').setView([startLat, startLng], lat ? 15 : 5);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(pickerMap);
+            
+            if (lat && lng) {
+                pickerMarker = L.marker([startLat, startLng]).addTo(pickerMap);
+            }
+
+            pickerMap.on('click', function(e) {
+                const clickedLat = e.latlng.lat.toFixed(6);
+                const clickedLng = e.latlng.lng.toFixed(6);
+                
+                document.getElementById('f-lat').value = clickedLat;
+                document.getElementById('f-lng').value = clickedLng;
+                
+                if (pickerMarker) {
+                    pickerMarker.setLatLng(e.latlng);
+                } else {
+                    pickerMarker = L.marker(e.latlng).addTo(pickerMap);
+                }
+            });
+            // إصلاح مشكلة تحميل الخريطة داخل الأقسام المخفية
+            pickerMap.invalidateSize();
+        }, 300);
+    }
+
     function openAddModal() {
       if (!window.isAuthenticated) { showToast('يجب تسجيل الدخول أولاً'); return; }
       editingDocId = null;
@@ -659,6 +767,17 @@
       const bReq = document.getElementById('modal-btn-request');
       const fields = document.getElementById('form-dynamic-fields');
 
+      // قسم الخريطة المصغرة للتحديد
+      const pickerHtml = `
+          <div class="col-span-1 md:col-span-4 mt-2 mb-4">
+              <label class="block text-xs font-bold text-slate-400 mb-2">تحديد الموقع الدقيق على الخريطة (اختياري)</label>
+              <div id="picker-map" class="w-full h-56 bg-slate-950 rounded-xl border border-slate-700 z-10 relative"></div>
+              <input type="hidden" id="f-lat" value="${data.lat || ''}" />
+              <input type="hidden" id="f-lng" value="${data.lng || ''}" />
+              <p class="text-[10px] text-slate-500 mt-1">اضغط على الخريطة لوضع علامة التحديد في موقع العقار.</p>
+          </div>
+      `;
+
       if (mode === 'offer') {
         if(bOffer) bOffer.className = "flex-1 py-3 rounded-xl font-bold text-sm transition bg-emerald-600 text-white";
         if(bReq) bReq.className = "flex-1 py-3 rounded-xl font-bold text-sm transition bg-slate-950 text-slate-400 border border-slate-800";
@@ -678,10 +797,13 @@
             <div><label class="block text-xs font-bold text-slate-400 mb-1">مساحة الأرض (م²)</label><input type="number" id="f-area" value="${data.landArea || ''}" placeholder="450" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الأطوال</label><input type="text" id="f-dim" value="${data.dimensions || ''}" placeholder="20 في 22.5" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
+          
+          ${pickerHtml}
+
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 mb-1">رقم المخطط</label><input type="text" id="f-plan" value="${data.planNumber || ''}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">رقم القطعة</label><input type="text" id="f-plot" value="${data.plotNumber || ''}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">رابط خريطة جوجل</label><input type="text" id="f-map" value="${data.mapUrl || ''}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">رابط خريطة جوجل (كنص)</label><input type="text" id="f-map" value="${data.mapUrl || ''}" placeholder="https://maps.app.goo.gl/..." class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الغرف</label><input type="text" id="f-rooms" value="${data.rooms || ''}" placeholder="5" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
@@ -695,7 +817,6 @@
           </div>
           <div id="roi-display" class="bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl text-xs text-emerald-400 font-bold hidden"></div>
           
-          <!-- تمت إضافة حالة العقار وتعديل تخطيط الخيارات -->
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 mb-1">حالة العقار</label><select id="f-status" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white"><option value="متاح" ${data.status !== 'مباع' ? 'selected' : ''}>متاح</option><option value="مباع" ${data.status === 'مباع' ? 'selected' : ''}>مباع</option></select></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">قابل للتفاوض؟</label><select id="f-nego" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white"><option value="نعم" ${data.isNegotiable !== 'لا' ? 'selected' : ''}>نعم</option><option value="لا" ${data.isNegotiable === 'لا' ? 'selected' : ''}>لا</option></select></div>
@@ -732,6 +853,9 @@
             <div><label class="block text-xs font-bold text-slate-400 mb-1">المدينة</label><input type="text" id="f-city" value="${data.city || 'الرياض'}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
             <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-400 mb-1">الأحياء المستهدفة</label><input type="text" id="f-districts" value="${data.districts || ''}" placeholder="العارض، الياسمين" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
+          
+          ${pickerHtml}
+
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الميزانية القصوى (ر.س)</label><input type="number" id="f-price-max" value="${data.priceMax || ''}" placeholder="2000000" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">المساحة الدنيا (م²)</label><input type="number" id="f-area-min" value="${data.areaMin || ''}" placeholder="400" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
@@ -749,6 +873,9 @@
           </div>
         `;
       }
+      
+      // تشغيل خريطة التحديد بعد رسم الحقول
+      initPickerMap(data.lat, data.lng);
     }
 
     async function handleFormSubmit(e) {
@@ -761,6 +888,9 @@
         city: document.getElementById('f-city').value,
         ownerName: document.getElementById('f-name').value,
         phone: document.getElementById('f-phone').value,
+        // حفظ الإحداثيات
+        lat: document.getElementById('f-lat') ? document.getElementById('f-lat').value : '',
+        lng: document.getElementById('f-lng') ? document.getElementById('f-lng').value : '',
         isFavorite: false,
         isMine: true
       };
