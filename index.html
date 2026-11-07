@@ -498,8 +498,9 @@
         setTimeout(() => {
           const map = L.map('main-map').setView([24.7136, 46.6753], 6); // المركز الافتراضي (الرياض)
           
-          L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-              attribution: '&copy; OpenStreetMap contributors'
+          // استخدام خرائط جوجل المباشرة لضمان وضوح الأسماء وعدم طلب مفتاح API
+          L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=ar&x={x}&y={y}&z={z}', {
+              attribution: '&copy; Google Maps'
           }).addTo(map);
 
           // إحداثيات افتراضية للمدن في حال لم يتم تحديد الموقع بدقة
@@ -684,7 +685,11 @@
             const startLng = lng ? parseFloat(lng) : 46.6753;
             
             pickerMap = L.map('picker-map').setView([startLat, startLng], lat ? 15 : 5);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(pickerMap);
+            
+            // استخدام قمر صناعي هجين من جوجل لتوضيح المباني والشوارع للتحديد الدقيق
+            L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=ar&x={x}&y={y}&z={z}', {
+                attribution: '&copy; Google Maps'
+            }).addTo(pickerMap);
             
             if (lat && lng) {
                 pickerMarker = L.marker([startLat, startLng]).addTo(pickerMap);
