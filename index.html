@@ -296,7 +296,10 @@
     
     let pickerMap = null;
     let pickerMarker = null;
-    let mainMapInstance = null; // مرجع للخريطة الشاملة
+    let mainMapInstance = null;
+
+    const PROPERTY_TYPES = ["فيلا", "شقة", "عمارة", "أرض", "دور", "استراحة", "مكتب تجاري", "محل تجاري"];
+    const CITIES_LIST = ["الرياض", "جدة", "الدمام", "مكة المكرمة", "المدينة المنورة", "الخبر"];
 
     async function handleGoogleLogin() {
       if (!window.auth || !window.GoogleAuthProvider) return;
@@ -1028,6 +1031,11 @@
       const bReq = document.getElementById('modal-btn-request');
       const fields = document.getElementById('form-dynamic-fields');
 
+      // توليد خيارات أنواع العقارات
+      const propertyOptionsHtml = PROPERTY_TYPES.map(t => `<option value="${t}" ${data.propertyType === t ? 'selected' : ''}>${t}</option>`).join('');
+      // توليد خيارات المدن
+      const citiesOptionsHtml = CITIES_LIST.map(c => `<option value="${c}" ${data.city === c ? 'selected' : ''}>${c}</option>`).join('');
+
       const pickerHtml = `
           <div class="col-span-1 md:col-span-4 mt-4 mb-4 bg-slate-950 border border-slate-800 p-4 rounded-2xl shadow-inner">
               <label class="block text-sm font-black text-white mb-4">الموقع الدقيق للإعلان أو الطلب <span class="text-xs font-normal text-slate-400 block mt-1">يدعم التحديد بالضغط أو لصق الإحداثيات مباشرة</span></label>
@@ -1052,10 +1060,20 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 mb-1">نوع العملية</label><select id="f-offer-type" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white"><option value="بيع" ${data.offerType==='بيع'?'selected':''}>بيع</option><option value="إيجار" ${data.offerType==='إيجار'?'selected':''}>إيجار</option><option value="بيع أو إيجار" ${data.offerType==='بيع أو إيجار'?'selected':''}>بيع أو إيجار</option></select></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">صفة مقدم العرض</label><select id="f-owner-role" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white"><option value="مالك" ${data.ownerRole==='مالك'?'selected':''}>مالك</option><option value="وسيط عقاري" ${data.ownerRole==='وسيط عقاري'?'selected':''}>وسيط عقاري</option></select></div>
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">نوع العقار</label><input type="text" id="f-prop" value="${data.propertyType || 'فيلا'}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1">نوع العقار</label>
+              <select id="f-prop" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white cursor-pointer" required>
+                ${propertyOptionsHtml}
+              </select>
+            </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">المدينة</label><input type="text" id="f-city" value="${data.city || 'الرياض'}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1">المدينة</label>
+              <select id="f-city" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white cursor-pointer" required>
+                ${citiesOptionsHtml}
+              </select>
+            </div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الحي</label><input type="text" id="f-district" value="${data.district || ''}" placeholder="العارض" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">اسم أو رقم الشارع</label><input type="text" id="f-street" value="${data.street || ''}" placeholder="الملك فهد" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
@@ -1135,10 +1153,20 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 mb-1">نوع الطلب</label><select id="f-req-type" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white"><option value="شراء">شراء</option><option value="إستئجار">إستئجار</option></select></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">صفة الطلب</label><select id="f-req-role" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white"><option value="أنا مشتري">أنا مشتري</option><option value="وسيط">وسيط</option></select></div>
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">نوع العقار</label><input type="text" id="f-prop" value="${data.propertyType || 'فيلا'}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1">نوع العقار</label>
+              <select id="f-prop" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white cursor-pointer" required>
+                ${propertyOptionsHtml}
+              </select>
+            </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">المدينة</label><input type="text" id="f-city" value="${data.city || 'الرياض'}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1">المدينة</label>
+              <select id="f-city" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white cursor-pointer" required>
+                ${citiesOptionsHtml}
+              </select>
+            </div>
             <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-400 mb-1">الأحياء المستهدفة</label><input type="text" id="f-districts" value="${data.districts || ''}" placeholder="العارض، الياسمين" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
           
