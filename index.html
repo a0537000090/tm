@@ -333,6 +333,8 @@
 
     // ==========================================
     // دالة توليد كرت الحالة الفاخر (WhatsApp Status) - التحديث الأخير
+// ==========================================
+    // دالة توليد كرت الحالة الفاخر (البطاقة البانورامية الحديثة)
     // ==========================================
     function generateFlyerImage(docId) {
       const item = items.find(i => i.id_doc === docId);
@@ -342,7 +344,7 @@
         return;
       }
 
-      showToast('جاري تصميم الكرت الأنيق...');
+      showToast('جاري تصميم البطاقة البانورامية...');
 
       const flyer = document.getElementById('flyer-template');
       const imgUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : (item.imageUrl || 'http://i.top4top.io/p_3964f5gh21.jpeg');
@@ -357,83 +359,95 @@
          streetStr += ' - ' + item.streetWidths.join('م/') + 'م';
       }
 
-      // بناء تصميم نظيف جداً يركز على مواصفات العقار فقط بدون أي بيانات تواصل أو شعارات
+      // بناء البطاقة البانورامية النظيفة والفاخرة
       flyer.innerHTML = `
-        <div class="relative w-full h-full bg-slate-950 flex flex-col">
+        <div class="relative w-full h-full bg-slate-955 text-slate-100 flex flex-col justify-between" style="background-color: #030712;">
           
-          <!-- الصورة العلوية مع التدرج اللوني -->
-          <div class="relative w-full h-[440px] shrink-0 rounded-b-[40px] overflow-hidden shadow-2xl border-b-2 border-slate-800">
+          <!-- القسم العلوي: الصورة مع معلومات سريعة نظيفة -->
+          <div class="relative w-full h-[420px] shrink-0 overflow-hidden border-b border-slate-800">
             <img src="${imgUrl}" class="w-full h-full object-cover" crossorigin="anonymous" onerror="this.src='http://i.top4top.io/p_3964f5gh21.jpeg'" />
-            <!-- تدرج لوني داكن جداً في الأسفل لإبراز النص -->
-            <div class="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-transparent to-slate-950/95"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/60"></div>
             
-            <!-- التاجات العلوية الأنيقة (المرجع والنوع) -->
-            <div class="absolute top-8 left-8 right-8 flex justify-between items-start">
-              <div class="bg-emerald-500 text-white px-6 py-2 rounded-full font-black text-xl shadow-lg tracking-wide">${item.offerType || 'بيع'}</div>
-              <div class="bg-slate-900/80 backdrop-blur text-slate-200 font-bold px-6 py-2 rounded-full text-lg shadow-lg border border-slate-700">رقم المرجع: <span class="text-emerald-400">${item.id}</span></div>
+            <!-- المرجع والنوع -->
+            <div class="absolute top-8 left-8 right-8 flex justify-between items-center">
+              <span class="bg-emerald-600 text-white font-black px-6 py-2 rounded-full text-xl shadow-lg">${item.offerType || 'بيع'}</span>
+              <span class="bg-slate-900/90 backdrop-blur text-slate-200 font-bold px-6 py-2 rounded-full text-lg shadow-lg border border-slate-700">المرجع: <span class="text-emerald-400">${item.id}</span></span>
             </div>
-            
-            <!-- العنوان والسعر (مدمجة فوق الصورة) -->
-            <div class="absolute bottom-8 left-8 right-8 text-center flex flex-col items-center">
-               <h2 class="text-[34px] font-black text-white mb-4 drop-shadow-lg leading-tight">
-                 ${item.propertyType} في ${item.city} ${item.district ? ' - ' + item.district : ''}
-               </h2>
-               <div class="text-[40px] font-black text-emerald-400 drop-shadow-2xl bg-slate-900/70 inline-block px-10 py-3 rounded-3xl backdrop-blur-md border border-slate-600/50 shadow-xl">
-                 ${priceText}
-               </div>
+
+            <!-- العنوان والمدينة -->
+            <div class="absolute bottom-6 left-8 right-8">
+              <h2 class="text-[32px] font-black text-white leading-tight drop-shadow-md">
+                ${item.propertyType} في ${item.city} ${item.district ? ' - ' + item.district : ''}
+              </h2>
             </div>
           </div>
 
-          <!-- تفاصيل العرض المرتبة والواضحة -->
-          <div class="flex-1 px-8 py-8 flex flex-col gap-5">
+          <!-- القسم السفلي: السعر والمواصفات (شبكة بطاقات نظيفة) -->
+        <div class="flex-1 px-8 py-6 flex flex-col justify-around">
             
-            <!-- الشبكة السداسية الفاخرة -->
-            <div class="grid grid-cols-2 gap-4">
-              <div class="bg-slate-900 rounded-[28px] p-5 flex flex-col items-center justify-center border border-slate-800/80 shadow-inner">
-                <span class="text-slate-500 text-lg font-bold mb-1">المساحة</span>
-                <span class="text-white text-3xl font-black">${item.landArea || '-'} م²</span>
+            <!-- السعر البارز -->
+            <div class="text-center bg-slate-900/90 border border-slate-800 rounded-3xl py-4 shadow-xl">
+              <span class="text-slate-400 text-sm font-bold block mb-1">السعر المطلوب</span>
+              <div class="text-[42px] font-black text-emerald-400 tracking-tight">${priceText}</div>
+            </div>
+
+            <!-- شبكة التفاصيل الستة -->
+            <div class="grid grid-cols-2 gap-3.5 my-2">
+              <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+                <span class="text-slate-400 text-sm font-bold mb-1">المساحة الإجمالية</span>
+                <span class="text-white text-2xl font-black">${item.landArea || '-'} م²</span>
               </div>
-              <div class="bg-slate-900 rounded-[28px] p-5 flex flex-col items-center justify-center border border-slate-800/80 shadow-inner text-center">
-                <span class="text-slate-500 text-lg font-bold mb-1">الشارع</span>
-                <span class="text-white text-[24px] font-black leading-tight">${streetStr}</span>
+              <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+                <span class="text-slate-400 text-sm font-bold mb-1">الشارع والواجهات</span>
+                <span class="text-white text-[19px] font-black leading-snug">${streetStr}</span>
               </div>
-              <div class="bg-slate-900 rounded-[28px] p-5 flex flex-col items-center justify-center border border-slate-800/80 shadow-inner text-center">
-                <span class="text-slate-500 text-lg font-bold mb-1">الغرف / المياه</span>
-                <span class="text-white text-[24px] font-black">${item.rooms || '-'} غ | ${item.bathrooms || '-'} ح</span>
+              <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+                <span class="text-slate-400 text-sm font-bold mb-1">الغرف ودورات المياه</span>
+                <span class="text-white text-[20px] font-black">${item.rooms || '-'} غرف | ${item.bathrooms || '-'} حمامات</span>
               </div>
-              <div class="bg-slate-900 rounded-[28px] p-5 flex flex-col items-center justify-center border border-slate-800/80 shadow-inner text-center">
-                <span class="text-slate-500 text-lg font-bold mb-1">عمر العقار</span>
-                <span class="text-white text-3xl font-black">${item.propertyAge || '-'}</span>
+              <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+                <span class="text-slate-400 text-sm font-bold mb-1">عمر العقار</span>
+                <span class="text-white text-2xl font-black">${item.propertyAge || '-'}</span>
               </div>
-              <div class="bg-slate-900 rounded-[28px] p-5 flex flex-col items-center justify-center border border-slate-800/80 shadow-inner text-center">
-                <span class="text-slate-500 text-lg font-bold mb-1">الأطوال</span>
-                <span class="text-white text-[24px] font-black" dir="ltr">${item.dimensions || '-'}</span>
+              <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+                <span class="text-slate-400 text-sm font-bold mb-1">الأطوال</span>
+                <span class="text-white text-[20px] font-black" dir="ltr">${item.dimensions || '-'}</span>
               </div>
-              <div class="bg-slate-900 rounded-[28px] p-5 flex flex-col items-center justify-center border border-slate-800/80 shadow-inner text-center">
-                <span class="text-slate-500 text-lg font-bold mb-1">حالة التفاوض</span>
-                <span class="text-white text-[24px] font-black">${item.isNegotiable !== 'لا' ? 'قابل للتفاوض' : 'غير قابل'}</span>
+              <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+                <span class="text-slate-400 text-sm font-bold mb-1">حالة التفاوض</span>
+                <span class="text-white text-[20px] font-black">${item.isNegotiable !== 'لا' ? 'قابل للتفاوض' : 'غير قابل'}</span>
               </div>
             </div>
 
-            <!-- المساحة المتبقية للمميزات والعائد -->
-            <div class="flex-1 flex flex-col gap-4 mt-2">
-               ${item.otherFeatures ? `
-               <div class="bg-slate-900 rounded-[28px] p-6 border border-slate-800/80 shadow-inner flex-1 flex flex-col justify-center">
-                  <span class="text-emerald-500 text-lg font-black mb-2 block">المميزات الإضافية:</span>
-                  <span class="text-slate-200 text-[22px] font-bold leading-relaxed line-clamp-3">${item.otherFeatures}</span>
-               </div>
-               ` : ''}
-               
-               ${item.roi ? `
-               <div class="bg-emerald-950/40 rounded-[28px] p-5 border border-emerald-900/50 shadow-inner text-center shrink-0">
-                  <span class="text-emerald-600 text-lg font-bold mb-1 block">العائد الاستثماري</span>
-                  <span class="text-emerald-400 text-4xl font-black">${item.roi}% سنوياً</span>
-               </div>
-               ` : ''}
+            <!-- مميزات إضافية إن وجدت -->
+            ${item.otherFeatures ? `
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
+              <span class="text-slate-300 text-base font-bold line-clamp-2">${item.otherFeatures}</span>
             </div>
+            ` : ''}
+
           </div>
         </div>
       `;
+
+      // تصدير الكرت كصورة جاهزة للواتساب
+      setTimeout(() => {
+        html2canvas(flyer, {
+          scale: 2, 
+          useCORS: true, 
+          backgroundColor: '#030712'
+        }).then(canvas => {
+          const link = document.createElement('a');
+          link.download = `عرض_عقاري_${item.id}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+          showToast('تم تصميم البطاقة وتحميلها بنجاح!');
+        }).catch(err => {
+          console.error(err);
+          showToast('فشل إنشاء الصورة، يرجى المحاولة لاحقاً');
+        });
+      }, 1000);
+    }
 
       // تصدير الصورة بعد إعطاء وقت لتحميل صورة العقار
       setTimeout(() => {
