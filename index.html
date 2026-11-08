@@ -296,6 +296,7 @@
     
     let pickerMap = null;
     let pickerMarker = null;
+    let mainMapInstance = null; // مرجع للخريطة الشاملة
 
     async function handleGoogleLogin() {
       if (!window.auth || !window.GoogleAuthProvider) return;
@@ -483,6 +484,42 @@
       }
     }
 
+    function jumpToMainMapCoords() {
+      const inputVal = document.getElementById('main-map-coords-input').value.trim();
+      if (!inputVal) {
+        showToast('يرجى إدخال إحداثية صحيحة أولاً');
+        return;
+      }
+
+      let latStr = inputVal;
+      let lngStr = '';
+
+      if (inputVal.includes(',')) {
+        const parts = inputVal.split(',');
+        latStr = parts[0].trim();
+        lngStr = parts[1].trim();
+      }
+
+      const lat = parseFloat(latStr);
+      const lng = parseFloat(lngStr);
+
+      if (isNaN(lat) || isNaN(lng)) {
+        showToast('صيغة الإحداثيات غير صحيحة. استخدم: خط العرض, خط الطول');
+        return;
+      }
+
+      if (mainMapInstance) {
+        mainMapInstance.setView([lat, lng], 17);
+        L.marker([lat, lng]).addTo(mainMapInstance)
+          .bindPopup(`<div style="font-family:'Cairo',sans-serif; text-align:right;"><b>الموقع المطلق</b><br>${lat}, ${lng}</div>`)
+          .openPopup();
+        showToast('تم الانتقال إلى الإحداثية بنجاح');
+      } else {
+        showToast('الخريطة غير مفعلة حالياً');
+      }
+    }
+    window.jumpToMainMapCoords = jumpToMainMapCoords;
+
     function renderUI() {
       if (!window.isAuthenticated) return;
       const container = document.getElementById('content-container');
@@ -508,7 +545,16 @@
 
       if (viewMode === 'map') {
         container.innerHTML = `
-          <div id="main-map" class="w-full h-[600px] bg-slate-900 rounded-3xl border border-slate-800 shadow-inner mb-10 z-0 relative"></div>
+          <div class="bg-slate-900 border border-slate-800 p-4 rounded-3xl mb-4 shadow-sm flex flex-col sm:flex-row items-center gap-3">
+            <div class="relative flex-1 w-full">
+              <i data-lucide="navigation" class="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-400 w-4 h-4"></i>
+              <input type="text" id="main-map-coords-input" placeholder="اكتب أو الصق الإحداثية هنا (مثال: 24.7136, 46.6753)" class="w-full bg-slate-950 border border-slate-700 py-3 pr-11 pl-4 rounded-xl text-sm text-white placeholder-slate-500 focus:border-emerald-500 outline-none font-mono text-left" dir="ltr" />
+            </div>
+            <button onclick="jumpToMainMapCoords()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-3 rounded-xl transition shadow flex items-center justify-center gap-2 text-sm shrink-0">
+              <i data-lucide="search" class="w-4 h-4"></i> اذهب للإحداثية
+            </button>
+          </div>
+          <div id="main-map" class="w-full h-[550px] bg-slate-900 rounded-3xl border border-slate-800 shadow-inner mb-10 z-0 relative"></div>
         `;
         
         setTimeout(() => {
@@ -520,7 +566,7 @@
               attribution: '&copy; Google Maps'
           });
 
-          const map = L.map('main-map', {
+          mainMapInstance = L.map('main-map', {
               center: [24.7136, 46.6753],
               zoom: 6,
               layers: [googleStreets]
@@ -530,7 +576,7 @@
               "🗺️ خريطة الشوارع": googleStreets,
               "🌍 قمر صناعي": googleSatellite
           };
-          L.control.layers(baseMaps, null, {position: 'topright'}).addTo(map);
+          L.control.layers(baseMaps, null, {position: 'topright'}).addTo(mainMapInstance);
 
           const cityCoords = {
             'الرياض': [24.7136, 46.6753],
@@ -580,18 +626,19 @@
                     </div>
                 `;
 
-                L.marker([lat, lng], { icon: customIcon }).addTo(map).bindPopup(popupContent);
+                L.marker([lat, lng], { icon: customIcon }).addTo(mainMapInstance).bindPopup(popupContent);
             }
           });
 
           if (bounds.length > 0) {
-              map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+              mainMapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
           }
 
           lucide.createIcons();
         }, 100);
 
       } else {
+        mainMapInstance = null;
         if (filtered.length === 0) {
           container.innerHTML = `<div class="text-center py-20 text-slate-500 font-bold">لا توجد نتائج مطابقة لعرضها</div>`;
           lucide.createIcons();
