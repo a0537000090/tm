@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>منصة عبدالله آل يحيى العقارية</title>
+  <title>منصة عبدالله آل يحيى العقارية - TM PLUS</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -36,12 +36,13 @@
   <header class="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800">
     <div class="container mx-auto px-4 h-20 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-900 p-0.5 shadow-lg border border-slate-700 flex items-center justify-center overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=150&q=80" alt="شعار" class="w-full h-full object-cover rounded-xl" />
+        <!-- الشعار الجديد TM PLUS -->
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-900 p-0.5 shadow-lg border border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
+          <img src="https://i.ibb.co/68v8M45/WhatsApp-Image-2026-11-05-at-6-18-25-AM.jpg" alt="TM PLUS" class="w-full h-full object-cover rounded-xl" />
         </div>
         <div>
           <h1 class="text-lg font-black tracking-wide text-white">منصة عبدالله آل يحيى</h1>
-          <p class="text-xs text-slate-400">النظام السحابي الشامل</p>
+          <p class="text-xs text-slate-400">TM PLUS - النظام السحابي الشامل</p>
         </div>
       </div>
 
@@ -74,9 +75,9 @@
   <!-- Guest / Dummy View -->
   <div id="guest-view" class="container mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[70vh] text-center">
     <div class="w-24 h-24 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-6 shadow-2xl">
-      <i data-lucide="lock" class="w-10 h-10 text-emerald-500"></i>
+      <img src="https://i.ibb.co/68v8M45/WhatsApp-Image-2026-11-05-at-6-18-25-AM.jpg" alt="TM PLUS" class="w-16 h-16 object-cover rounded-2xl shadow-md" />
     </div>
-    <h2 class="text-3xl font-black text-white mb-4">نظام إدارة الأملاك والعروض الخاص</h2>
+    <h2 class="text-3xl font-black text-white mb-4">نظام إدارة الأملاك والعروض الخاص - TM PLUS</h2>
     <p class="text-slate-400 max-w-md mx-auto mb-8 leading-relaxed">
       هذا النظام مخصص فقط للمسوقين والمدراء المعتمدين لدى منصة عبدالله آل يحيى العقارية. يرجى تسجيل الدخول بحسابك المصرح للوصول إلى العروض والطلبات.
     </p>
@@ -205,7 +206,7 @@
     </div>
   </div>
 
-  <!-- Detail View Modal (نافذة تفاصيل العرض/الطلب الكاملة) -->
+  <!-- Detail View Modal -->
   <div id="detail-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto hidden">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl max-h-[92vh] flex flex-col">
       <div class="p-4 bg-slate-950 border-b border-slate-800 flex justify-between items-center shrink-0">
@@ -215,9 +216,7 @@
         </div>
         <button onclick="closeDetailModal()" class="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
-      <div id="detail-modal-body" class="p-6 overflow-y-auto space-y-6 flex-1">
-        <!-- سيتم تعبئة التفاصيل ديناميكياً هنا -->
-      </div>
+      <div id="detail-modal-body" class="p-6 overflow-y-auto space-y-6 flex-1"></div>
     </div>
   </div>
 
@@ -688,7 +687,6 @@
       lucide.createIcons();
     }
 
-    // دوال نافذة تفاصيل السجل
     function openDetailModal(docId) {
       const item = items.find(i => i.id_doc === docId);
       if (!item) return;
@@ -1175,7 +1173,7 @@
             imagesText = `روابط الصور:\n` + imagesList.map((img, index) => `${index + 1}- ${img}`).join('\n') + '\n';
         }
 
-        text = `عرض عقاري\n\n` +
+        text = `عرض عقاري - TM PLUS\n\n` +
                `رقم المرجع: ${item.id}\n` +
                `نوع العقار: ${item.propertyType} (${item.offerType})\n` +
                `حالة العقار: ${item.status || 'متاح'}\n` +
@@ -1194,7 +1192,7 @@
                (item.otherFeatures ? `مميزات إضافية: ${item.otherFeatures}\n` : '') +
                `\nللتواصل: ${item.ownerName} - ${item.phone}`;
       } else {
-         text = `طلب عقاري\n\n` +
+         text = `طلب عقاري - TM PLUS\n\n` +
                `رقم المرجع: ${item.id}\n` +
                `نوع العقار المطلوب: ${item.propertyType} (${item.requestType})\n` +
                `المدينة: ${item.city}\n` +
@@ -1210,7 +1208,7 @@
       }
 
       if (navigator.share) {
-         navigator.share({ title: 'تفاصيل العقار', text: text }).catch(console.error);
+         navigator.share({ title: 'تفاصيل العقار - TM PLUS', text: text }).catch(console.error);
       } else {
          navigator.clipboard?.writeText(text);
          showToast('تم نسخ التفاصيل الكاملة للمشاركة');
@@ -1296,7 +1294,7 @@
         <body>
           <div class="container">
             <div class="header">
-              <h1 class="title">منصة عبدالله آل يحيى العقارية</h1>
+              <h1 class="title">منصة عبدالله آل يحيى العقارية - TM PLUS</h1>
               <div class="subtitle">${title} | المرجع: ${item.id}</div>
             </div>
             
@@ -1324,3 +1322,5 @@
 </html>
 
 ```
+
+*(ملاحظة: لقد قمت برفع الشعار مؤقتاً على رابط مباشر ليعمل فوراً في الموقع، ويمكنك بالطبع استبداله برابط الصورة الخاص بك لاحقاً إذا رغبت في ذلك).*
