@@ -628,6 +628,12 @@
                 `;
               }
 
+              let streetSummaryText = item.street || '-';
+              if(item.streetCount) streetSummaryText += ` (${item.streetCount})`;
+              if(item.streetWidths && item.streetWidths.length > 0) {
+                streetSummaryText += ` - أطوال الشوارع: ` + item.streetWidths.map(w => w + 'م').join('، ');
+              }
+
               return `
                 <div class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl hover:border-slate-700 transition flex flex-col group">
                   ${imagesHtmlRender}
@@ -651,7 +657,7 @@
 
                     <div class="space-y-2 text-sm text-slate-300 mb-6 flex-1 cursor-pointer" onclick="openDetailModal('${item.id_doc}')">
                       ${isOffer ? `
-                        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الشارع:</span><span class="font-medium text-white">${item.street || '-'} (${item.streetCount || '-'}) ${item.streetWidth ? 'عرض ' + item.streetWidth + 'م' : ''}</span></div>
+                        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الشارع:</span><span class="font-medium text-white">${streetSummaryText}</span></div>
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">المساحة:</span><span class="font-medium text-white">${item.landArea || '-'} م²</span></div>
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الأطوال:</span><span class="font-medium text-white">${item.dimensions || '-'}</span></div>
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الغرف / دورات المياه:</span><span class="font-medium text-white">${item.rooms || '-'} غرف • ${item.bathrooms || '-'} حمامات</span></div>
@@ -725,13 +731,19 @@
 
       let contentGridHtml = '';
       if (isOffer) {
+        let fullStreetStr = item.street || '-';
+        if(item.streetCount) fullStreetStr += ` (${item.streetCount})`;
+        if(item.streetWidths && item.streetWidths.length > 0) {
+          fullStreetStr += ` - عرض الشوارع: ` + item.streetWidths.map(w => w + 'م').join('، ');
+        }
+
         contentGridHtml = `
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">نوع العملية</div><div class="text-base font-black text-white">${item.offerType || 'بيع'}</div></div>
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">حالة العقار</div><div class="text-base font-black text-emerald-400">${item.status || 'متاح'}</div></div>
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">السعر المطلوب</div><div class="text-base font-black text-emerald-400">${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}</div></div>
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">المدينة / الحي</div><div class="text-base font-bold text-white">${item.city} - ${item.district || '-'}</div></div>
-            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">الشارع والأطوال</div><div class="text-base font-bold text-white">${item.street || '-'} (${item.streetCount || '-'} ${item.streetWidth ? 'عرض ' + item.streetWidth + 'م' : ''})</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 md:col-span-2"><div class="text-xs text-slate-400 mb-1">الشارع وتفاصيله</div><div class="text-base font-bold text-white">${fullStreetStr}</div></div>
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">مساحة الأرض والأدوار</div><div class="text-base font-bold text-white">${item.landArea || '-'} م² • ${item.floors || '-'} أدوار</div></div>
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">الغرف ودورات المياه</div><div class="text-base font-bold text-white">${item.rooms || '-'} غرف • ${item.bathrooms || '-'} حمامات</div></div>
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">عمر العقار</div><div class="text-base font-bold text-white">${item.propertyAge || '-'}</div></div>
@@ -936,6 +948,34 @@
     }
     window.addImageInput = addImageInput;
 
+    function updateStreetWidthInputs() {
+      const countVal = document.getElementById('f-street-count').value;
+      const container = document.getElementById('street-widths-container');
+      if(!container) return;
+
+      let numStreets = 1;
+      if (countVal === 'شارعين') numStreets = 2;
+      else if (countVal === 'ثلاثة شوارع') numStreets = 3;
+      else if (countVal === 'أربع شوارع') numStreets = 4;
+
+      // نسترجع القيم القديمة إن وجدت
+      const existingInputs = container.querySelectorAll('.f-street-width-input');
+      const oldValues = Array.from(existingInputs).map(i => i.value);
+
+      let html = '';
+      for(let i = 0; i < numStreets; i++) {
+        let val = oldValues[i] || '';
+        html += `
+          <div class="relative flex items-center">
+            <input type="number" value="${val}" placeholder="عرض الشارع ${i+1}" class="f-street-width-input w-full bg-slate-950 border border-slate-700 p-3 pl-8 rounded-xl text-sm text-white outline-none focus:border-emerald-500" />
+            <span class="absolute left-3 text-slate-400 font-bold text-sm">م</span>
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+    }
+    window.updateStreetWidthInputs = updateStreetWidthInputs;
+
     function setAddMode(mode, data = {}) {
       addMode = mode;
       const bOffer = document.getElementById('modal-btn-offer');
@@ -971,12 +1011,12 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 mb-1">المدينة</label><input type="text" id="f-city" value="${data.city || 'الرياض'}" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الحي</label><input type="text" id="f-district" value="${data.district || ''}" placeholder="العارض" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">الشارع</label><input type="text" id="f-street" value="${data.street || ''}" placeholder="الملك فهد" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-1">اسم أو رقم الشارع</label><input type="text" id="f-street" value="${data.street || ''}" placeholder="الملك فهد" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-slate-400 mb-1">عدد الشوارع</label>
-              <select id="f-street-count" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white">
+              <select id="f-street-count" onchange="updateStreetWidthInputs()" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white">
                 <option value="شارع واحد" ${data.streetCount==='شارع واحد'?'selected':''}>شارع واحد</option>
                 <option value="شارعين" ${data.streetCount==='شارعين'?'selected':''}>شارعين</option>
                 <option value="ثلاثة شوارع" ${data.streetCount==='ثلاثة شوارع'?'selected':''}>ثلاثة شوارع</option>
@@ -984,11 +1024,8 @@
               </select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-400 mb-1">عرض الشارع</label>
-              <div class="relative flex items-center">
-                <input type="number" id="f-street-width" value="${data.streetWidth || ''}" placeholder="20" class="w-full bg-slate-950 border border-slate-700 p-3 pl-8 rounded-xl text-sm text-white outline-none focus:border-emerald-500" />
-                <span class="absolute left-3 text-slate-400 font-bold text-sm">م</span>
-              </div>
+              <label class="block text-xs font-bold text-slate-400 mb-1">عرض الشوارع (بالمتر)</label>
+              <div id="street-widths-container" class="grid grid-cols-2 gap-2"></div>
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1037,6 +1074,13 @@
         
         const imagesList = data.imageUrls && data.imageUrls.length > 0 ? data.imageUrls : (data.imageUrl ? [data.imageUrl] : ['']);
         imagesList.forEach(img => addImageInput(img));
+        updateStreetWidthInputs();
+        if(data.streetWidths && data.streetWidths.length > 0) {
+          setTimeout(() => {
+            const inputs = document.querySelectorAll('.f-street-width-input');
+            data.streetWidths.forEach((w, idx) => { if(inputs[idx]) inputs[idx].value = w; });
+          }, 100);
+        }
 
       } else {
         if(bReq) bReq.className = "flex-1 py-3 rounded-xl font-bold text-sm transition bg-emerald-600 text-white";
@@ -1103,7 +1147,10 @@
         payload.district = document.getElementById('f-district').value;
         payload.street = document.getElementById('f-street').value;
         payload.streetCount = document.getElementById('f-street-count').value;
-        payload.streetWidth = document.getElementById('f-street-width').value;
+        
+        const widthInputs = document.querySelectorAll('.f-street-width-input');
+        payload.streetWidths = Array.from(widthInputs).map(i => i.value).filter(v => v.trim() !== '');
+
         payload.landArea = document.getElementById('f-area').value;
         payload.dimensions = document.getElementById('f-dim').value;
         payload.planNumber = document.getElementById('f-plan').value;
@@ -1191,12 +1238,18 @@
             imagesText = `روابط الصور:\n` + imagesList.map((img, index) => `${index + 1}- ${img}`).join('\n') + '\n';
         }
 
+        let streetDetailsStr = item.street || '-';
+        if(item.streetCount) streetDetailsStr += ` (${item.streetCount})`;
+        if(item.streetWidths && item.streetWidths.length > 0) {
+          streetDetailsStr += ` - عرض الشوارع: ` + item.streetWidths.map(w => w + 'م').join('، ');
+        }
+
         text = `عرض عقاري - TM PLUS\n\n` +
                `رقم المرجع: ${item.id}\n` +
                `نوع العقار: ${item.propertyType} (${item.offerType})\n` +
                `حالة العقار: ${item.status || 'متاح'}\n` +
                `الموقع: ${item.city} - حي ${item.district || 'غير محدد'}\n` +
-               `الشارع: ${item.street || '-'} (${item.streetCount || '-'} ${item.streetWidth ? 'عرض ' + item.streetWidth + 'م' : ''})\n` +
+               `الشارع: ${streetDetailsStr}\n` +
                `المساحة: ${item.landArea || '-'} م²\n` +
                `الأطوال: ${item.dimensions || '-'}\n` +
                `الغرف: ${item.rooms || '-'} | دورات المياه: ${item.bathrooms || '-'}\n` +
@@ -1252,13 +1305,19 @@
 
       let detailsHtml = '';
       if (isOffer) {
+        let streetDetailsStr = item.street || '-';
+        if(item.streetCount) streetDetailsStr += ` (${item.streetCount})`;
+        if(item.streetWidths && item.streetWidths.length > 0) {
+          streetDetailsStr += ` - أطوال الشوارع: ` + item.streetWidths.map(w => w + 'م').join('، ');
+        }
+
         detailsHtml = `
           <div class="box"><div class="label">نوع العقار</div><div class="value">${item.propertyType} (${item.offerType})</div></div>
           <div class="box"><div class="label">حالة العقار</div><div class="value" style="color: ${item.status === 'مباع' ? '#e11d48' : '#0ea5e9'};">${item.status || 'متاح'}</div></div>
           <div class="box"><div class="label">الموقع</div><div class="value">${item.city} - حي ${item.district || '-'}</div></div>
           <div class="box"><div class="label">المساحة</div><div class="value">${item.landArea || '-'} م²</div></div>
           <div class="box"><div class="label">الأطوال</div><div class="value">${item.dimensions || '-'}</div></div>
-          <div class="box"><div class="label">الشارع</div><div class="value">${item.street || '-'} (${item.streetCount || '-'} ${item.streetWidth ? 'عرض ' + item.streetWidth + 'م' : ''})</div></div>
+          <div class="box" style="grid-column: span 2;"><div class="label">الشارع والتفاصيل</div><div class="value">${streetDetailsStr}</div></div>
           <div class="box"><div class="label">السعر</div><div class="value">${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}</div></div>
           <div class="box"><div class="label">عمر العقار</div><div class="value">${item.propertyAge || '-'}</div></div>
           <div class="box"><div class="label">الغرف / دورات المياه</div><div class="value">${item.rooms || '-'} غرف / ${item.bathrooms || '-'} حمامات</div></div>
