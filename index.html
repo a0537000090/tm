@@ -36,7 +36,7 @@
   <header class="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800">
     <div class="container mx-auto px-4 h-20 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <!-- الشعار الجديد -->
+        <!-- الشعار -->
         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-900 p-0.5 shadow-lg border border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
           <img src="http://i.top4top.io/p_3964f5gh21.jpeg" alt="TM PLUS" class="w-full h-full object-cover rounded-xl" />
         </div>
@@ -651,7 +651,7 @@
 
                     <div class="space-y-2 text-sm text-slate-300 mb-6 flex-1 cursor-pointer" onclick="openDetailModal('${item.id_doc}')">
                       ${isOffer ? `
-                        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الشارع:</span><span class="font-medium text-white">${item.street || '-'} (${item.streetCount || '-'})</span></div>
+                        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الشارع:</span><span class="font-medium text-white">${item.street || '-'} (${item.streetCount || '-'}) ${item.streetWidth ? 'عرض ' + item.streetWidth + 'م' : ''}</span></div>
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">المساحة:</span><span class="font-medium text-white">${item.landArea || '-'} م²</span></div>
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الأطوال:</span><span class="font-medium text-white">${item.dimensions || '-'}</span></div>
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الغرف / دورات المياه:</span><span class="font-medium text-white">${item.rooms || '-'} غرف • ${item.bathrooms || '-'} حمامات</span></div>
@@ -731,7 +731,7 @@
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">حالة العقار</div><div class="text-base font-black text-emerald-400">${item.status || 'متاح'}</div></div>
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">السعر المطلوب</div><div class="text-base font-black text-emerald-400">${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}</div></div>
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">المدينة / الحي</div><div class="text-base font-bold text-white">${item.city} - ${item.district || '-'}</div></div>
-            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">الشارع والأطوال</div><div class="text-base font-bold text-white">${item.street || '-'} (${item.streetCount || '-'})</div></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">الشارع والأطوال</div><div class="text-base font-bold text-white">${item.street || '-'} (${item.streetCount || '-'} ${item.streetWidth ? 'عرض ' + item.streetWidth + 'م' : ''})</div></div>
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">مساحة الأرض والأدوار</div><div class="text-base font-bold text-white">${item.landArea || '-'} م² • ${item.floors || '-'} أدوار</div></div>
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">الغرف ودورات المياه</div><div class="text-base font-bold text-white">${item.rooms || '-'} غرف • ${item.bathrooms || '-'} حمامات</div></div>
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800"><div class="text-xs text-slate-400 mb-1">عمر العقار</div><div class="text-base font-bold text-white">${item.propertyAge || '-'}</div></div>
@@ -973,8 +973,25 @@
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الحي</label><input type="text" id="f-district" value="${data.district || ''}" placeholder="العارض" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" required /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الشارع</label><input type="text" id="f-street" value="${data.street || ''}" placeholder="الملك فهد" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div><label class="block text-xs font-bold text-slate-400 mb-1">عدد الشوارع</label><select id="f-street-count" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white"><option value="شارع واحد" ${data.streetCount==='شارع واحد'?'selected':''}>شارع واحد</option><option value="شارعين" ${data.streetCount==='شارعين'?'selected':''}>شارعين</option><option value="ثلاثة شوارع" ${data.streetCount==='ثلاثة شوارع'?'selected':''}>ثلاثة شوارع</option></select></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1">عدد الشوارع</label>
+              <select id="f-street-count" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white">
+                <option value="شارع واحد" ${data.streetCount==='شارع واحد'?'selected':''}>شارع واحد</option>
+                <option value="شارعين" ${data.streetCount==='شارعين'?'selected':''}>شارعين</option>
+                <option value="ثلاثة شوارع" ${data.streetCount==='ثلاثة شوارع'?'selected':''}>ثلاثة شوارع</option>
+                <option value="أربع شوارع" ${data.streetCount==='أربع شوارع'?'selected':''}>أربع شوارع</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1">عرض الشارع</label>
+              <div class="relative flex items-center">
+                <input type="number" id="f-street-width" value="${data.streetWidth || ''}" placeholder="20" class="w-full bg-slate-950 border border-slate-700 p-3 pl-8 rounded-xl text-sm text-white outline-none focus:border-emerald-500" />
+                <span class="absolute left-3 text-slate-400 font-bold text-sm">م</span>
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><label class="block text-xs font-bold text-slate-400 mb-1">مساحة الأرض (م²)</label><input type="number" id="f-area" value="${data.landArea || ''}" placeholder="450" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
             <div><label class="block text-xs font-bold text-slate-400 mb-1">الأطوال</label><input type="text" id="f-dim" value="${data.dimensions || ''}" placeholder="20 في 22.5" class="w-full bg-slate-950 border border-slate-700 p-3 rounded-xl text-sm text-white" /></div>
           </div>
@@ -1086,6 +1103,7 @@
         payload.district = document.getElementById('f-district').value;
         payload.street = document.getElementById('f-street').value;
         payload.streetCount = document.getElementById('f-street-count').value;
+        payload.streetWidth = document.getElementById('f-street-width').value;
         payload.landArea = document.getElementById('f-area').value;
         payload.dimensions = document.getElementById('f-dim').value;
         payload.planNumber = document.getElementById('f-plan').value;
@@ -1178,7 +1196,7 @@
                `نوع العقار: ${item.propertyType} (${item.offerType})\n` +
                `حالة العقار: ${item.status || 'متاح'}\n` +
                `الموقع: ${item.city} - حي ${item.district || 'غير محدد'}\n` +
-               `الشارع: ${item.street || '-'} (${item.streetCount || '-'})\n` +
+               `الشارع: ${item.street || '-'} (${item.streetCount || '-'} ${item.streetWidth ? 'عرض ' + item.streetWidth + 'م' : ''})\n` +
                `المساحة: ${item.landArea || '-'} م²\n` +
                `الأطوال: ${item.dimensions || '-'}\n` +
                `الغرف: ${item.rooms || '-'} | دورات المياه: ${item.bathrooms || '-'}\n` +
@@ -1240,7 +1258,7 @@
           <div class="box"><div class="label">الموقع</div><div class="value">${item.city} - حي ${item.district || '-'}</div></div>
           <div class="box"><div class="label">المساحة</div><div class="value">${item.landArea || '-'} م²</div></div>
           <div class="box"><div class="label">الأطوال</div><div class="value">${item.dimensions || '-'}</div></div>
-          <div class="box"><div class="label">الشارع</div><div class="value">${item.street || '-'} (${item.streetCount || '-'})</div></div>
+          <div class="box"><div class="label">الشارع</div><div class="value">${item.street || '-'} (${item.streetCount || '-'} ${item.streetWidth ? 'عرض ' + item.streetWidth + 'م' : ''})</div></div>
           <div class="box"><div class="label">السعر</div><div class="value">${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}</div></div>
           <div class="box"><div class="label">عمر العقار</div><div class="value">${item.propertyAge || '-'}</div></div>
           <div class="box"><div class="label">الغرف / دورات المياه</div><div class="value">${item.rooms || '-'} غرف / ${item.bathrooms || '-'} حمامات</div></div>
