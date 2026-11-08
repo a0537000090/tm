@@ -631,7 +631,7 @@
               let streetSummaryText = item.street || '-';
               if(item.streetCount) streetSummaryText += ` (${item.streetCount})`;
               if(item.streetWidths && item.streetWidths.length > 0) {
-                streetSummaryText += ` - أطوال الشوارع: ` + item.streetWidths.map(w => w + 'م').join('، ');
+                streetSummaryText += ` - عرض الشوارع: ` + item.streetWidths.map(w => w + 'م').join('، ');
               }
 
               return `
@@ -958,7 +958,6 @@
       else if (countVal === 'ثلاثة شوارع') numStreets = 3;
       else if (countVal === 'أربع شوارع') numStreets = 4;
 
-      // نسترجع القيم القديمة إن وجدت
       const existingInputs = container.querySelectorAll('.f-street-width-input');
       const oldValues = Array.from(existingInputs).map(i => i.value);
 
@@ -1308,7 +1307,7 @@
         let streetDetailsStr = item.street || '-';
         if(item.streetCount) streetDetailsStr += ` (${item.streetCount})`;
         if(item.streetWidths && item.streetWidths.length > 0) {
-          streetDetailsStr += ` - أطوال الشوارع: ` + item.streetWidths.map(w => w + 'م').join('، ');
+          streetDetailsStr += ` - عرض الشوارع: ` + item.streetWidths.map(w => w + 'م').join('، ');
         }
 
         detailsHtml = `
@@ -1317,7 +1316,7 @@
           <div class="box"><div class="label">الموقع</div><div class="value">${item.city} - حي ${item.district || '-'}</div></div>
           <div class="box"><div class="label">المساحة</div><div class="value">${item.landArea || '-'} م²</div></div>
           <div class="box"><div class="label">الأطوال</div><div class="value">${item.dimensions || '-'}</div></div>
-          <div class="box" style="grid-column: span 2;"><div class="label">الشارع والتفاصيل</div><div class="value">${streetDetailsStr}</div></div>
+          <div class="box" style="grid-column: span 2;"><div class="label">الشارع وتفاصيل العرض</div><div class="value">${streetDetailsStr}</div></div>
           <div class="box"><div class="label">السعر</div><div class="value">${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}</div></div>
           <div class="box"><div class="label">عمر العقار</div><div class="value">${item.propertyAge || '-'}</div></div>
           <div class="box"><div class="label">الغرف / دورات المياه</div><div class="value">${item.rooms || '-'} غرف / ${item.bathrooms || '-'} حمامات</div></div>
