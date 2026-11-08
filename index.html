@@ -226,7 +226,7 @@
   </div>
 
   <!-- قالب الكرت التسويقي (مخفي برمجياً ويستخدم فقط للتصدير) -->
-  <div id="flyer-template" class="fixed -left-[9999px] top-0 w-[540px] h-[960px] bg-slate-900 text-white flex flex-col justify-between overflow-hidden z-[-50]" dir="rtl" style="font-family: 'Cairo', sans-serif;">
+  <div id="flyer-template" class="fixed -left-[9999px] top-0 w-[540px] h-[960px] bg-slate-950 text-white flex flex-col justify-between overflow-hidden z-[-50]" dir="rtl" style="font-family: 'Cairo', sans-serif;">
     <!-- سيتم تعبئته ديناميكياً بواسطة جافاسكربت -->
   </div>
 
@@ -332,8 +332,6 @@
     const CITIES_LIST = ["الرياض", "جدة", "الدمام", "مكة المكرمة", "المدينة المنورة", "الخبر"];
 
     // ==========================================
-    // دالة توليد كرت الحالة الفاخر (WhatsApp Status) - التحديث الأخير
-// ==========================================
     // دالة توليد كرت الحالة الفاخر (البطاقة البانورامية الحديثة)
     // ==========================================
     function generateFlyerImage(docId) {
@@ -361,7 +359,7 @@
 
       // بناء البطاقة البانورامية النظيفة والفاخرة
       flyer.innerHTML = `
-        <div class="relative w-full h-full bg-slate-955 text-slate-100 flex flex-col justify-between" style="background-color: #030712;">
+        <div class="relative w-full h-full text-slate-100 flex flex-col justify-between" style="background-color: #030712;">
           
           <!-- القسم العلوي: الصورة مع معلومات سريعة نظيفة -->
           <div class="relative w-full h-[420px] shrink-0 overflow-hidden border-b border-slate-800">
@@ -383,7 +381,7 @@
           </div>
 
           <!-- القسم السفلي: السعر والمواصفات (شبكة بطاقات نظيفة) -->
-        <div class="flex-1 px-8 py-6 flex flex-col justify-around">
+          <div class="flex-1 px-8 py-6 flex flex-col justify-around">
             
             <!-- السعر البارز -->
             <div class="text-center bg-slate-900/90 border border-slate-800 rounded-3xl py-4 shadow-xl">
@@ -442,25 +440,6 @@
           link.href = canvas.toDataURL('image/png');
           link.click();
           showToast('تم تصميم البطاقة وتحميلها بنجاح!');
-        }).catch(err => {
-          console.error(err);
-          showToast('فشل إنشاء الصورة، يرجى المحاولة لاحقاً');
-        });
-      }, 1000);
-    }
-
-      // تصدير الصورة بعد إعطاء وقت لتحميل صورة العقار
-      setTimeout(() => {
-        html2canvas(flyer, {
-          scale: 2, 
-          useCORS: true, 
-          backgroundColor: '#020617' // خلفية متناسقة
-        }).then(canvas => {
-          const link = document.createElement('a');
-          link.download = `تفاصيل_العرض_${item.id}.png`;
-          link.href = canvas.toDataURL('image/png');
-          link.click();
-          showToast('تم تحميل الكرت بنجاح! جاهز للنشر في الواتساب.');
         }).catch(err => {
           console.error(err);
           showToast('فشل إنشاء الصورة، يرجى المحاولة لاحقاً');
