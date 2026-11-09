@@ -471,20 +471,28 @@
         const imagesList = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : (item.imageUrl ? [item.imageUrl] : []);
         let imagesHtml = '';
         if (imagesList.length > 0) {
-            imagesHtml = `
-                <div class="relative w-full h-[45vh] sm:h-[55vh] bg-white overflow-hidden mb-4 sm:mb-6 flex items-center justify-center border-b border-slate-200">
-                    <div class="flex overflow-x-auto snap-x snap-mandatory h-full w-full hide-scrollbar scroll-smooth items-center justify-center" id="cust-slider" dir="ltr">
-                        ${imagesList.map(img => `<div class="snap-center shrink-0 w-full h-full flex items-center justify-center bg-white p-2"><img src="${img}" alt="صورة العقار" class="max-w-full max-h-full object-contain" crossorigin="anonymous" /></div>`).join('')}
+            const mainImage = imagesList[0];
+            
+            let secondaryHtml = '';
+            if (imagesList.length > 1) {
+                secondaryHtml = `
+                    <div class="flex overflow-x-auto gap-2 p-3 bg-slate-100 border-b border-slate-200 hide-scrollbar justify-center" dir="rtl">
+                        ${imagesList.map((img, index) => `
+                            <div onclick="document.getElementById('main-cust-img').src='${img}'; document.querySelectorAll('.cust-thumb').forEach(el=>el.classList.remove('border-emerald-500')); this.classList.add('border-emerald-500');" 
+                                 class="cust-thumb shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-white border-2 ${index === 0 ? 'border-emerald-500' : 'border-slate-200'} p-1 cursor-pointer hover:border-emerald-400 transition flex items-center justify-center">
+                                <img src="${img}" class="max-w-full max-h-full object-contain" crossorigin="anonymous" />
+                            </div>
+                        `).join('')}
                     </div>
-                    ${imagesList.length > 1 ? `
-                        <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10 pointer-events-none">
-                            ${imagesList.map((_, i) => `<div class="w-2 h-2 rounded-full bg-slate-400/50"></div>`).join('')}
-                        </div>
-                        <button onclick="document.getElementById('cust-slider').scrollBy({left: -300, behavior: 'smooth'})" class="absolute top-1/2 left-2 sm:left-4 -translate-y-1/2 bg-white/90 text-slate-800 p-1.5 sm:p-2 rounded-full shadow-lg hover:bg-emerald-500 hover:text-white transition z-10 border border-slate-200"><i data-lucide="chevron-left" class="w-4 h-4 sm:w-5 sm:h-5"></i></button>
-                        <button onclick="document.getElementById('cust-slider').scrollBy({left: 300, behavior: 'smooth'})" class="absolute top-1/2 right-2 sm:right-4 -translate-y-1/2 bg-white/90 text-slate-800 p-1.5 sm:p-2 rounded-full shadow-lg hover:bg-emerald-500 hover:text-white transition z-10 border border-slate-200"><i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5"></i></button>
-                    ` : ''}
+                `;
+            }
+
+            imagesHtml = `
+                <div class="relative w-full h-[40vh] sm:h-[50vh] bg-white overflow-hidden flex items-center justify-center border-b border-slate-200">
+                    <img id="main-cust-img" src="${mainImage}" alt="صورة العقار" class="max-w-full max-h-full object-contain transition-all duration-300" crossorigin="anonymous" />
                     <div class="absolute top-4 right-4 bg-emerald-600 text-white font-bold px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs sm:text-sm shadow-md">${item.status || 'متاح'}</div>
                 </div>
+                ${secondaryHtml}
             `;
         } else {
             imagesHtml = `<div class="w-full h-[30vh] bg-slate-200 flex items-center justify-center mb-4 sm:mb-6"><i data-lucide="image" class="w-12 h-12 sm:w-16 sm:h-16 text-slate-400"></i></div>`;
@@ -977,22 +985,42 @@
               let imagesHtmlRender = '';
               
               if (isOffer && imagesList.length > 0) {
+                const mainImage = imagesList[0];
+                const secondaryImages = imagesList.slice(1, 4); // نأخذ 3 صور ثانوية كحد أقصى للعرض في البطاقة
+                
+                let secondaryHtml = '';
+                if (secondaryImages.length > 0) {
+                  secondaryHtml = `
+                    <div class="flex gap-1 p-1 bg-slate-950 border-b border-slate-800 h-14 sm:h-16">
+                      ${secondaryImages.map(img => `
+                        <div class="flex-1 rounded-md bg-white overflow-hidden flex items-center justify-center p-0.5">
+                           <img src="${img}" class="max-w-full max-h-full object-cover" crossorigin="anonymous" />
+                        </div>
+                      `).join('')}
+                      ${imagesList.length > 4 ? `
+                        <div class="flex-1 rounded-md bg-slate-800 overflow-hidden flex items-center justify-center p-0.5 relative">
+                           <img src="${imagesList[4]}" class="max-w-full max-h-full object-cover opacity-40 blur-[1px]" crossorigin="anonymous" />
+                           <span class="absolute inset-0 flex items-center justify-center text-white font-black text-xs sm:text-sm bg-slate-900/40 shadow-inner">+${imagesList.length - 4}</span>
+                        </div>
+                      ` : ''}
+                    </div>
+                  `;
+                }
+
                 imagesHtmlRender = `
-                  <div class="relative h-48 sm:h-56 overflow-hidden bg-white group/slider cursor-pointer flex items-center justify-center border-b border-slate-800" onclick="openDetailModal('${item.id_doc}')">
-                    <div class="flex overflow-x-auto snap-x snap-mandatory h-full w-full hide-scrollbar scroll-smooth items-center justify-center bg-white" id="slider-${item.id_doc}" dir="ltr">
-                      ${imagesList.map(img => `<div class="snap-center shrink-0 w-full h-full flex items-center justify-center bg-white p-1"><img src="${img}" alt="عقار" class="max-w-full max-h-full object-contain group-hover:scale-105 transition duration-500" crossorigin="anonymous" /></div>`).join('')}
+                  <div class="relative flex flex-col group cursor-pointer bg-slate-900" onclick="openDetailModal('${item.id_doc}')">
+                    <div class="h-40 sm:h-48 overflow-hidden bg-white flex items-center justify-center border-b border-slate-800 relative">
+                       <img src="${mainImage}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition duration-500" crossorigin="anonymous" />
+                       
+                       <div class="absolute top-3 right-3 flex gap-2 z-10">
+                         <div class="bg-slate-950/80 backdrop-blur text-emerald-400 font-bold px-2 sm:px-3 py-1 rounded-lg sm:rounded-xl text-[10px] sm:text-xs border border-slate-800">${item.offerType || 'بيع'}</div>
+                         ${item.status === 'مباع' ? `<div class="bg-rose-500/90 backdrop-blur text-white font-bold px-2 sm:px-3 py-1 rounded-lg sm:rounded-xl text-[10px] sm:text-xs border border-rose-600 shadow-lg">تم البيع</div>` : ''}
+                       </div>
+                       <button onclick="event.stopPropagation(); toggleFavorite('${item.id_doc}')" class="absolute top-3 left-3 p-2 sm:p-2.5 rounded-full backdrop-blur border transition z-10 ${item.isFavorite ? 'bg-rose-500 text-white border-rose-600' : 'bg-slate-950/60 text-slate-300 border-slate-800'}">
+                         <i data-lucide="heart" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                       </button>
                     </div>
-                    ${imagesList.length > 1 ? `
-                      <button onclick="event.stopPropagation(); document.getElementById('slider-${item.id_doc}').scrollBy({left: -300, behavior: 'smooth'})" class="absolute top-1/2 left-2 -translate-y-1/2 bg-white/90 text-slate-800 p-1 sm:p-1.5 rounded-full opacity-100 sm:opacity-0 group-hover/slider:opacity-100 transition z-10 hover:bg-emerald-500 hover:text-white shadow border border-slate-200"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                      <button onclick="event.stopPropagation(); document.getElementById('slider-${item.id_doc}').scrollBy({left: 300, behavior: 'smooth'})" class="absolute top-1/2 right-2 -translate-y-1/2 bg-white/90 text-slate-800 p-1 sm:p-1.5 rounded-full opacity-100 sm:opacity-0 group-hover/slider:opacity-100 transition z-10 hover:bg-emerald-500 hover:text-white shadow border border-slate-200"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                    ` : ''}
-                    <div class="absolute top-3 right-3 flex gap-2 z-10">
-                      <div class="bg-slate-950/80 backdrop-blur text-emerald-400 font-bold px-2 sm:px-3 py-1 rounded-lg sm:rounded-xl text-[10px] sm:text-xs border border-slate-800">${item.offerType || 'بيع'}</div>
-                      ${item.status === 'مباع' ? `<div class="bg-rose-500/90 backdrop-blur text-white font-bold px-2 sm:px-3 py-1 rounded-lg sm:rounded-xl text-[10px] sm:text-xs border border-rose-600 shadow-lg">تم البيع</div>` : ''}
-                    </div>
-                    <button onclick="event.stopPropagation(); toggleFavorite('${item.id_doc}')" class="absolute top-3 left-3 p-2 sm:p-2.5 rounded-full backdrop-blur border transition z-10 ${item.isFavorite ? 'bg-rose-500 text-white border-rose-600' : 'bg-slate-950/60 text-slate-300 border-slate-800'}">
-                      <i data-lucide="heart" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
-                    </button>
+                    ${secondaryHtml}
                   </div>
                 `;
               }
@@ -1075,9 +1103,29 @@
       const imagesList = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : (item.imageUrl ? [item.imageUrl] : []);
       let imagesGalleryHtml = '';
       if (isOffer && imagesList.length > 0) {
+        const mainImage = imagesList[0];
+        const secondaryImages = imagesList.slice(1);
+        
+        let secondaryHtml = '';
+        if (secondaryImages.length > 0) {
+          secondaryHtml = `
+            <div class="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
+              ${imagesList.map((img, index) => `
+                <div onclick="document.getElementById('main-modal-img').src='${img}'" 
+                     class="h-16 sm:h-20 rounded-lg overflow-hidden bg-white border border-slate-800 p-1 flex items-center justify-center cursor-pointer hover:border-emerald-500 transition">
+                  <img src="${img}" alt="صورة مصغرة" class="max-w-full max-h-full object-contain" crossorigin="anonymous" />
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+
         imagesGalleryHtml = `
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
-            ${imagesList.map(img => `<div class="h-48 sm:h-64 rounded-xl sm:rounded-2xl overflow-hidden bg-white border border-slate-800 flex items-center justify-center p-2"><img src="${img}" alt="صورة العقار" class="max-w-full max-h-full object-contain" crossorigin="anonymous" /></div>`).join('')}
+          <div class="mb-4 sm:mb-6">
+            <div class="h-56 sm:h-72 w-full rounded-xl sm:rounded-2xl overflow-hidden bg-white border border-slate-800 flex items-center justify-center p-2">
+              <img id="main-modal-img" src="${mainImage}" alt="الصورة الرئيسية" class="max-w-full max-h-full object-contain transition-all duration-300" crossorigin="anonymous" />
+            </div>
+            ${secondaryHtml}
           </div>
         `;
       }
