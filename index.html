@@ -331,8 +331,8 @@
     const PROPERTY_TYPES = ["فيلا", "شقة", "عمارة", "أرض", "دور", "استراحة", "مكتب تجاري", "محل تجاري"];
     const CITIES_LIST = ["الرياض", "جدة", "الدمام", "مكة المكرمة", "المدينة المنورة", "الخبر"];
     
-    // مفتاح الـ API الخاص برفع الصور إلى ImgBB
-    const IMGBB_API_KEY = '3M3onzDdmN8bvPffiuUe3prEAZXwk16x54';
+    // وضع أحد مفاتيح الـ API النشطة من حسابك في ImgBB هنا
+    const IMGBB_API_KEY = '346c3e5151b4da39a9dbfef70089ef54';
 
     // ==========================================
     // دالة توليد صورة حالة الواتساب (بالعرض - بدون صور أو روابط)
@@ -361,7 +361,6 @@
          streetStr += ' - ' + item.streetWidths.join('م/') + 'م';
       }
 
-      // إضافة قسم الدخل الاستثماري بشكل بارز إن وجد
       let incomeHtml = '';
       if (item.rentIncome && item.rentIncome > 0) {
         incomeHtml = `
@@ -373,14 +372,9 @@
         `;
       }
 
-      // تصميم الكرت الأفقي مقسم لقسمين (يمين: رئيسي، يسار: تفاصيل)
       flyer.innerHTML = `
         <div class="relative w-full h-full bg-slate-50 text-slate-900 flex p-10 gap-10" style="background-color: #f8fafc; font-family: 'Cairo', sans-serif; direction: rtl;">
-          
-          <!-- شريط جانبي جمالي أخضر -->
           <div class="absolute top-0 right-0 bottom-0 w-6 bg-emerald-600"></div>
-
-          <!-- القسم الأيمن (45%): العنوان والسعر والدخل -->
           <div class="w-[45%] flex flex-col justify-center pr-6 border-l-2 border-slate-200 pl-10">
             <div class="mb-6">
               <span class="inline-block px-4 py-1.5 rounded-full bg-slate-200 text-slate-600 font-bold text-lg mb-4 shadow-sm border border-slate-300">رقم المرجع: ${item.id}</span>
@@ -389,64 +383,51 @@
               </h2>
               <p class="text-[28px] font-bold text-slate-500">${item.city} ${item.district ? ' - حي ' + item.district : ''}</p>
             </div>
-            
             <div class="space-y-6">
               <div class="bg-white rounded-2xl py-5 px-6 text-center border border-slate-200 shadow-sm">
                 <span class="text-slate-600 text-xl font-bold block mb-1">السعر المطلوب</span>
                 <div class="text-[46px] font-black text-slate-900 tracking-tight">${priceText}</div>
               </div>
-              
               ${incomeHtml}
             </div>
           </div>
-
-          <!-- القسم الأيسر (55%): جدول البيانات التفصيلية -->
           <div class="w-[55%] flex flex-col justify-center">
             <div class="grid grid-cols-2 gap-x-10 gap-y-8 text-[24px] font-bold text-slate-700 bg-white p-10 rounded-3xl shadow-sm border border-slate-100">
-              
               <div class="flex flex-col border-b border-slate-100 pb-3">
                 <span class="text-slate-400 text-xl">المساحة</span>
                 <span class="text-slate-900 text-[28px]">${item.landArea || '-'} م²</span>
               </div>
-              
               <div class="flex flex-col border-b border-slate-100 pb-3">
                 <span class="text-slate-400 text-xl">الغرف / دورات المياه</span>
                 <span class="text-slate-900 text-[28px]">${item.rooms || '-'} غرف | ${item.bathrooms || '-'} حمامات</span>
               </div>
-              
               <div class="flex flex-col border-b border-slate-100 pb-3 col-span-2">
                 <span class="text-slate-400 text-xl">الشارع والواجهات</span>
                 <span class="text-slate-900 text-[28px] truncate max-w-full text-right">${streetStr}</span>
               </div>
-              
               <div class="flex flex-col border-b border-slate-100 pb-3">
                 <span class="text-slate-400 text-xl">عمر العقار</span>
                 <span class="text-slate-900 text-[28px]">${item.propertyAge || '-'}</span>
               </div>
-              
               <div class="flex flex-col border-b border-slate-100 pb-3">
                 <span class="text-slate-400 text-xl">الأطوال</span>
                 <span dir="ltr" class="text-slate-900 text-[28px] text-right">${item.dimensions || '-'}</span>
               </div>
-              
               <div class="flex flex-col border-b border-slate-100 pb-3">
                 <span class="text-slate-400 text-xl">حالة العقار</span>
                 <span class="text-[28px] ${item.status === 'مباع' ? 'text-rose-600' : 'text-emerald-600'}">${item.status || 'متاح'}</span>
               </div>
-
               <div class="flex flex-col border-b border-slate-100 pb-3">
                 <span class="text-slate-400 text-xl">قابلية التفاوض</span>
                 <span class="text-slate-900 text-[28px]">${item.isNegotiable !== 'لا' ? 'قابل للتفاوض' : 'غير قابل'}</span>
               </div>
             </div>
-
             ${item.otherFeatures ? `
             <div class="bg-slate-100 rounded-2xl p-5 mt-8 text-[22px] font-bold text-slate-700 shadow-inner flex items-start gap-4">
               <span class="bg-slate-300 px-3 py-1 rounded-lg text-lg shrink-0">مميزات</span>
               <span class="leading-relaxed">${item.otherFeatures}</span>
             </div>
             ` : ''}
-
             <div class="mt-auto pt-8 text-left text-slate-400 font-bold text-xl flex items-center justify-end gap-3">
               منصة عبدالله آل يحيى العقارية
             </div>
@@ -454,7 +435,6 @@
         </div>
       `;
 
-      // تصدير الكرت كصورة بمقياس 1.5 لضمان جودة ممتازة بدون زيادة مفرطة في حجم الصورة
       setTimeout(() => {
         html2canvas(flyer, {
           scale: 1.5, 
@@ -584,7 +564,6 @@
         }
 
         container.innerHTML = `
-            <!-- Customer Header -->
             <header class="bg-white shadow-sm sticky top-0 z-40 border-b border-slate-200">
                 <div class="max-w-4xl mx-auto px-4 h-16 sm:h-20 flex items-center justify-center gap-3 sm:gap-4">
                     <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-slate-100 p-0.5 shadow-sm border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
@@ -627,7 +606,6 @@
                 ` : ''}
             </div>
 
-            <!-- Floating Action Bar for WhatsApp (Responsive) -->
             <div class="fixed bottom-0 left-0 right-0 p-3 sm:p-4 bg-white/90 backdrop-blur-md border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50">
                 <div class="max-w-4xl mx-auto flex items-center gap-4">
                     <a href="${waLink}" target="_blank" class="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm sm:text-lg py-3 sm:py-4 rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-600/30">
@@ -1084,7 +1062,6 @@
                       `}
                     </div>
 
-                    <!-- Actions Footer (Responsive layout for mobile) -->
                     <div class="pt-3 sm:pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                       <div class="text-[10px] sm:text-xs text-slate-400 flex items-center gap-1 w-full sm:w-auto"><i data-lucide="user" class="w-3 h-3 sm:w-3.5 sm:h-3.5"></i>${item.ownerName || 'مقدم الطلب'}</div>
                       <div class="flex items-center gap-1.5 w-full sm:w-auto justify-end">
@@ -1365,7 +1342,6 @@
     }
     window.addImageInput = addImageInput;
     
-    // الدالة المحدثة والمصححة بالكامل للرفع عبر ImgBB باستخدام Base64
     async function handleImageUpload(event) {
         const files = event.target.files;
         if (!files || files.length === 0) return;
@@ -1552,7 +1528,6 @@
               <span id="upload-status" class="hidden"></span>
             </div>
             
-            <!-- زر الرفع المباشر من الجهاز -->
             <div class="mb-3 sm:mb-4 bg-slate-900 border border-slate-700 border-dashed rounded-xl p-3 sm:p-4 flex flex-col items-center justify-center text-center gap-2 hover:bg-slate-800 transition cursor-pointer" onclick="document.getElementById('f-image-upload').click()">
               <input type="file" id="f-image-upload" multiple accept="image/*" class="hidden" onchange="handleImageUpload(event)" />
               <i id="upload-btn-icon" data-lucide="upload-cloud" class="w-6 h-6 text-emerald-500"></i>
