@@ -26,7 +26,7 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen pb-16 selection:bg-emerald-500 selection:text-white">
 
-  <!-- Toast Notification (Responsive) -->
+  <!-- Toast Notification -->
   <div id="toast" class="fixed bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-auto z-50 bg-emerald-600 text-white px-4 py-3 sm:px-5 rounded-xl sm:rounded-2xl shadow-2xl flex items-center justify-center sm:justify-start gap-3 border border-emerald-500 hidden transform transition-all duration-300 translate-y-20">
     <i data-lucide="check-circle" class="w-5 h-5 shrink-0"></i>
     <span id="toast-text" class="font-bold text-xs sm:text-sm"></span>
@@ -36,7 +36,6 @@
   <header class="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800">
     <div class="container mx-auto px-3 sm:px-4 h-16 sm:h-20 flex items-center justify-between">
       <div class="flex items-center gap-2 sm:gap-3">
-        <!-- الشعار -->
         <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-900 p-0.5 shadow-lg border border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
           <img src="http://i.top4top.io/p_3964f5gh21.jpeg" alt="TM PLUS" class="w-full h-full object-cover rounded-lg sm:rounded-xl" />
         </div>
@@ -48,7 +47,6 @@
 
       <div class="flex items-center gap-1.5 sm:gap-3">
         <div id="auth-container"></div>
-
         <div id="notifications-container" class="relative hidden">
           <button onclick="toggleNotifications()" class="relative p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 transition border border-slate-700">
             <i data-lucide="bell" class="w-4 h-4 sm:w-5 sm:h-5"></i>
@@ -66,7 +64,6 @@
             </div>
           </div>
         </div>
-
         <div id="add-btn-container"></div>
       </div>
     </div>
@@ -88,8 +85,7 @@
 
   <!-- Private Main Container -->
   <div id="private-view" class="container mx-auto px-3 sm:px-4 py-4 sm:py-6 hidden">
-   
-    <!-- Stats Row (Responsive Grid) -->
+    <!-- Stats Row -->
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6">
       <div class="bg-slate-900 border border-slate-800 p-3 sm:p-4 rounded-xl sm:rounded-2xl flex items-center justify-between shadow-sm">
         <div>
@@ -128,7 +124,7 @@
       </div>
     </div>
 
-    <!-- Tabs (Responsive) -->
+    <!-- Tabs -->
     <div class="flex flex-wrap gap-1 sm:gap-2 p-1 bg-slate-900 rounded-xl sm:rounded-2xl w-full mx-auto mb-4 sm:mb-6 border border-slate-800">
       <button onclick="setActiveTab('all')" id="tab-all" class="flex-1 min-w-[30%] py-2 sm:py-3 px-2 sm:px-4 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-sm transition bg-emerald-600 text-white shadow-lg shadow-emerald-900/30">الرئيسية</button>
       <button onclick="setActiveTab('offers')" id="tab-offers" class="flex-1 min-w-[30%] py-2 sm:py-3 px-2 sm:px-4 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-sm transition text-slate-400 hover:text-white">العروض</button>
@@ -180,15 +176,12 @@
 
     <!-- Content View Area -->
     <div id="content-container"></div>
-
   </div>
 
-  <!-- Customer View Container (Landing Page for Clients) -->
-  <div id="customer-view-container" class="hidden bg-slate-50 min-h-screen pb-24 text-slate-800 font-sans">
-    <!-- Populated dynamically via JS -->
-  </div>
+  <!-- Customer View Container -->
+  <div id="customer-view-container" class="hidden bg-slate-50 min-h-screen pb-24 text-slate-800 font-sans"></div>
 
-  <!-- Add Modal (Responsive) -->
+  <!-- Add Modal -->
   <div id="add-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto hidden">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4 sm:mb-6 border-b border-slate-800 pb-3 sm:pb-4">
@@ -211,7 +204,7 @@
     </div>
   </div>
 
-  <!-- Detail View Modal (Responsive) -->
+  <!-- Detail View Modal -->
   <div id="detail-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto hidden">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-4xl rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl max-h-[95vh] sm:max-h-[92vh] flex flex-col">
       <div class="p-3 sm:p-4 bg-slate-950 border-b border-slate-800 flex justify-between items-center shrink-0">
@@ -225,10 +218,8 @@
     </div>
   </div>
 
-  <!-- قالب الكرت التسويقي (يستخدم لتصدير حالة الواتساب - أبعاد أفقية 1280×720) -->
-  <div id="flyer-template" class="fixed -left-[9999px] top-0 w-[1280px] h-[720px] bg-white text-slate-900 flex flex-col overflow-hidden z-[-50]" dir="rtl" style="font-family: 'Cairo', sans-serif;">
-    <!-- سيتم تعبئته ديناميكياً بواسطة جافاسكربت -->
-  </div>
+  <!-- قالب الكرت التسويقي -->
+  <div id="flyer-template" class="fixed -left-[9999px] top-0 w-[1280px] h-[720px] bg-white text-slate-900 flex flex-col overflow-hidden z-[-50]" dir="rtl" style="font-family: 'Cairo', sans-serif;"></div>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -331,12 +322,8 @@
     const PROPERTY_TYPES = ["فيلا", "شقة", "عمارة", "أرض", "دور", "استراحة", "مكتب تجاري", "محل تجاري"];
     const CITIES_LIST = ["الرياض", "جدة", "الدمام", "مكة المكرمة", "المدينة المنورة", "الخبر"];
     
-    // وضع أحد مفاتيح الـ API النشطة من حسابك في ImgBB هنا
     const IMGBB_API_KEY = '346c3e5151b4da39a9dbfef70089ef54';
 
-    // ==========================================
-    // دالة توليد صورة حالة الواتساب (بالعرض - بدون صور أو روابط)
-    // ==========================================
     function generateFlyerImage(docId) {
       const item = items.find(i => i.id_doc === docId);
       if (!item) return;
@@ -454,10 +441,6 @@
     }
     window.generateFlyerImage = generateFlyerImage;
 
-
-    // ==========================================
-    // صفحة العميل التفاعلية
-    // ==========================================
     async function loadCustomerView(docId) {
         const container = document.getElementById('customer-view-container');
         container.innerHTML = `<div class="flex flex-col items-center justify-center min-h-[80vh]"><span class="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></span><p class="font-bold text-slate-500">جاري تجهيز العرض...</p></div>`;
@@ -489,9 +472,9 @@
         let imagesHtml = '';
         if (imagesList.length > 0) {
             imagesHtml = `
-                <div class="relative w-full h-[40vh] sm:h-[50vh] bg-slate-200 overflow-hidden mb-4 sm:mb-6">
-                    <div class="flex overflow-x-auto snap-x snap-mandatory h-full w-full hide-scrollbar scroll-smooth" id="cust-slider" dir="ltr">
-                        ${imagesList.map(img => `<div class="snap-center shrink-0 w-full h-full"><img src="${img}" alt="صورة العقار" class="w-full h-full object-cover" crossorigin="anonymous" /></div>`).join('')}
+                <div class="relative w-full h-[45vh] sm:h-[55vh] bg-slate-900 overflow-hidden mb-4 sm:mb-6 flex items-center justify-center">
+                    <div class="flex overflow-x-auto snap-x snap-mandatory h-full w-full hide-scrollbar scroll-smooth items-center justify-center" id="cust-slider" dir="ltr">
+                        ${imagesList.map(img => `<div class="snap-center shrink-0 w-full h-full flex items-center justify-center bg-slate-950 p-2"><img src="${img}" alt="صورة العقار" class="max-w-full max-h-full object-contain" crossorigin="anonymous" /></div>`).join('')}
                     </div>
                     ${imagesList.length > 1 ? `
                         <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10 pointer-events-none">
@@ -636,10 +619,6 @@
             showToast('تم نسخ الرابط التفاعلي للعميل بنجاح');
         }
     }
-
-    // ==========================================
-    // بقية دوال لوحة التحكم الأساسية
-    // ==========================================
 
     async function handleGoogleLogin() {
       if (!window.auth || !window.GoogleAuthProvider) return;
@@ -999,9 +978,9 @@
               
               if (isOffer && imagesList.length > 0) {
                 imagesHtmlRender = `
-                  <div class="relative h-48 sm:h-56 overflow-hidden bg-slate-950 group/slider cursor-pointer" onclick="openDetailModal('${item.id_doc}')">
-                    <div class="flex overflow-x-auto snap-x snap-mandatory h-full w-full hide-scrollbar scroll-smooth" id="slider-${item.id_doc}" dir="ltr">
-                      ${imagesList.map(img => `<div class="snap-center shrink-0 w-full h-full"><img src="${img}" alt="عقار" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" crossorigin="anonymous" /></div>`).join('')}
+                  <div class="relative h-48 sm:h-56 overflow-hidden bg-slate-950 group/slider cursor-pointer flex items-center justify-center" onclick="openDetailModal('${item.id_doc}')">
+                    <div class="flex overflow-x-auto snap-x snap-mandatory h-full w-full hide-scrollbar scroll-smooth items-center justify-center" id="slider-${item.id_doc}" dir="ltr">
+                      ${imagesList.map(img => `<div class="snap-center shrink-0 w-full h-full flex items-center justify-center"><img src="${img}" alt="عقار" class="max-w-full max-h-full object-contain group-hover:scale-105 transition duration-500" crossorigin="anonymous" /></div>`).join('')}
                     </div>
                     ${imagesList.length > 1 ? `
                       <button onclick="event.stopPropagation(); document.getElementById('slider-${item.id_doc}').scrollBy({left: -300, behavior: 'smooth'})" class="absolute top-1/2 left-2 -translate-y-1/2 bg-slate-900/80 text-white p-1 sm:p-1.5 rounded-full opacity-100 sm:opacity-0 group-hover/slider:opacity-100 transition z-10 hover:bg-emerald-500 shadow"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
@@ -1098,7 +1077,7 @@
       if (isOffer && imagesList.length > 0) {
         imagesGalleryHtml = `
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
-            ${imagesList.map(img => `<div class="h-40 sm:h-56 rounded-xl sm:rounded-2xl overflow-hidden bg-slate-950 border border-slate-800"><img src="${img}" alt="صورة العقار" class="w-full h-full object-cover" crossorigin="anonymous" /></div>`).join('')}
+            ${imagesList.map(img => `<div class="h-48 sm:h-64 rounded-xl sm:rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center p-2"><img src="${img}" alt="صورة العقار" class="max-w-full max-h-full object-contain" crossorigin="anonymous" /></div>`).join('')}
           </div>
         `;
       }
@@ -1207,7 +1186,6 @@
     function updateMapFromCoords() {
         let latInput = document.getElementById('f-lat');
         let lngInput = document.getElementById('f-lng');
-        
         let latVal = latInput.value.trim();
         let lngVal = lngInput.value.trim();
 
@@ -1215,19 +1193,14 @@
             let parts = latVal.split(',');
             latInput.value = parts[0].trim();
             lngInput.value = parts[1].trim();
-            latVal = latInput.value;
-            lngVal = lngInput.value;
-        } 
-        else if (lngVal.includes(',')) {
+        } else if (lngVal.includes(',')) {
             let parts = lngVal.split(',');
             latInput.value = parts[0].trim();
             lngInput.value = parts[1].trim();
-            latVal = latInput.value;
-            lngVal = lngInput.value;
         }
         
-        const lat = parseFloat(latVal);
-        const lng = parseFloat(lngVal);
+        const lat = parseFloat(latInput.value);
+        const lng = parseFloat(lngInput.value);
         
         if (!isNaN(lat) && !isNaN(lng) && pickerMap) {
             pickerMap.setView([lat, lng], 17);
@@ -1275,7 +1248,6 @@
             pickerMap.on('click', function(e) {
                 const clickedLat = e.latlng.lat.toFixed(6);
                 const clickedLng = e.latlng.lng.toFixed(6);
-                
                 document.getElementById('f-lat').value = clickedLat;
                 document.getElementById('f-lng').value = clickedLng;
                 
@@ -1612,11 +1584,9 @@
         city: document.getElementById('f-city').value,
         ownerName: document.getElementById('f-name').value,
         phone: document.getElementById('f-phone').value,
-        
         mapUrl: document.getElementById('f-map') ? document.getElementById('f-map').value : '',
         lat: document.getElementById('f-lat') ? document.getElementById('f-lat').value : '',
         lng: document.getElementById('f-lng') ? document.getElementById('f-lng').value : '',
-        
         isFavorite: false,
         isMine: true
       };
@@ -1711,13 +1681,6 @@
       
       let text = '';
       if(item.type === 'offer') {
-        const imagesList = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : (item.imageUrl ? [item.imageUrl] : []);
-        let imagesText = '';
-        if(imagesList.length === 1) imagesText = `رابط الصورة: ${imagesList[0]}\n`;
-        else if (imagesList.length > 1) {
-            imagesText = `روابط الصور:\n` + imagesList.map((img, index) => `${index + 1}- ${img}`).join('\n') + '\n';
-        }
-
         let streetDetailsStr = item.street || '-';
         if(item.streetCount) streetDetailsStr += ` (${item.streetCount})`;
         if(item.streetWidths && item.streetWidths.length > 0) {
@@ -1821,11 +1784,11 @@
             .title { color: #0f172a; font-size: 28px; font-weight: 900; margin-bottom: 5px; }
             .subtitle { color: #10b981; font-size: 18px; font-weight: bold;}
             
-            .single-img-container { width: 100%; height: 350px; background: #f1f5f9; border-radius: 12px; overflow: hidden; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
-            .single-img-container img { width: 100%; height: 100%; object-fit: cover; }
+            .single-img-container { width: 100%; height: 400px; background: #0f172a; border-radius: 12px; overflow: hidden; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
+            .single-img-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
             
             .images-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
-            .images-grid img { width: 100%; height: 250px; object-fit: cover; border-radius: 12px; }
+            .images-grid img { width: 100%; height: 280px; object-fit: contain; background: #0f172a; border-radius: 12px; }
 
             .details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
             .box { background: #f8fafc; padding: 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
@@ -1863,3 +1826,5 @@
   </script>
 </body>
 </html>
+
+```
