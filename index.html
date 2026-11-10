@@ -13,6 +13,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- HTML to Canvas (لتوليد الصور) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- jsPDF (لتوليد ملفات PDF) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
     body { font-family: 'Cairo', sans-serif; }
@@ -416,8 +418,9 @@
               <span class="leading-relaxed">${item.otherFeatures}</span>
             </div>
             ` : ''}
-            <div class="mt-auto pt-8 text-left text-slate-400 font-bold text-xl flex items-center justify-end gap-3">
-              منصة عبدالله آل يحيى العقارية
+            <div class="mt-auto pt-8 text-left text-slate-400 font-bold text-xl flex flex-col items-end gap-1">
+              <span>شركة قمة تباريج العقارية</span>
+              <span class="text-sm">ترخيص فال: 1100245617 | للتواصل: 0530666633 - 0537000090</span>
             </div>
           </div>
         </div>
@@ -987,7 +990,7 @@
               
               if (isOffer && imagesList.length > 0) {
                 const mainImage = imagesList[0];
-                const secondaryImages = imagesList.slice(1, 4); // نأخذ 3 صور ثانوية كحد أقصى للعرض في البطاقة
+                const secondaryImages = imagesList.slice(1, 4); 
                 
                 let secondaryHtml = '';
                 if (secondaryImages.length > 0) {
@@ -1767,26 +1770,32 @@
     function exportPDF(docId) {
       const item = items.find(i => i.id_doc === docId);
       if (!item) return;
-      const win = window.open('', '_blank');
+
+      // إظهار إشعار للمستخدم بأن العملية بدأت
+      showToast('جاري تجهيز وتصدير ملف PDF الاحترافي...');
+
       const isOffer = item.type === 'offer';
       const title = isOffer ? 'عرض عقاري' : 'طلب عقاري';
 
+      // تجهيز الصور
       const imagesList = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : (item.imageUrl ? [item.imageUrl] : []);
       let pdfImagesHtml = '';
       if (isOffer) {
         if (imagesList.length === 1) {
-          pdfImagesHtml = `<div class="single-img-container"><img src="${imagesList[0]}" alt="صورة العقار" onerror="this.style.display='none'"/></div>`;
+          pdfImagesHtml = `<div class="single-img-container"><img src="${imagesList[0]}" crossorigin="anonymous" alt="صورة العقار" onerror="this.style.display='none'"/></div>`;
         } else if (imagesList.length > 1) {
-          pdfImagesHtml = `<div class="images-grid">` + imagesList.map(img => `<img src="${img}" alt="صورة العقار" onerror="this.style.display='none'"/>`).join('') + `</div>`;
+          // عرض أول 4 صور كحد أقصى في الـ PDF لتجنب تجاوز حجم الصفحة
+          pdfImagesHtml = `<div class="images-grid">` + imagesList.slice(0, 4).map(img => `<img src="${img}" crossorigin="anonymous" alt="صورة العقار" onerror="this.style.display='none'"/>`).join('') + `</div>`;
         }
       }
 
+      // تجهيز تفاصيل العقار
       let detailsHtml = '';
       if (isOffer) {
         let streetDetailsStr = item.street || '-';
         if(item.streetCount) streetDetailsStr += ` (${item.streetCount})`;
         if(item.streetWidths && item.streetWidths.length > 0) {
-          streetDetailsStr += ` - عرض الشوارع: ` + item.streetWidths.map(w => w + 'م').join('، ');
+          streetDetailsStr += ` - العرض: ` + item.streetWidths.map(w => w + 'م').join('، ');
         }
 
         detailsHtml = `
@@ -1796,13 +1805,11 @@
           <div class="box"><div class="label">المساحة</div><div class="value">${item.landArea || '-'} م²</div></div>
           <div class="box"><div class="label">الأطوال</div><div class="value">${item.dimensions || '-'}</div></div>
           <div class="box" style="grid-column: span 2;"><div class="label">الشارع وتفاصيل العرض</div><div class="value">${streetDetailsStr}</div></div>
-          <div class="box"><div class="label">السعر</div><div class="value">${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}</div></div>
+          <div class="box"><div class="label">السعر المطلوب</div><div class="value">${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}</div></div>
           <div class="box"><div class="label">عمر العقار</div><div class="value">${item.propertyAge || '-'}</div></div>
           <div class="box"><div class="label">الغرف / دورات المياه</div><div class="value">${item.rooms || '-'} غرف / ${item.bathrooms || '-'} حمامات</div></div>
           ${item.rentIncome ? `<div class="box"><div class="label">الدخل الإيجاري</div><div class="value">${Number(item.rentIncome).toLocaleString()} ر.س</div></div>` : ''}
           ${item.roi ? `<div class="box"><div class="label">العائد الاستثماري</div><div class="value" style="color:#10b981;">${item.roi}% سنوياً</div></div>` : ''}
-          ${item.mapUrl ? `<div class="box" style="grid-column: span 2;"><div class="label">رابط الموقع (خريطة جوجل)</div><div class="value"><a href="${item.mapUrl}" target="_blank" style="color: #10b981; text-decoration: none; word-break: break-all; font-size: 15px;">${item.mapUrl}</a></div></div>` : ''}
-          ${item.lat && item.lng ? `<div class="box" style="grid-column: span 2;"><div class="label">إحداثيات الموقع</div><div class="value"><a href="https://maps.google.com/?q=${item.lat},${item.lng}" target="_blank" style="color: #10b981; text-decoration: none; word-break: break-all; font-size: 15px;">${item.lat}, ${item.lng}</a></div></div>` : ''}
           ${item.otherFeatures ? `<div class="box" style="grid-column: span 2;"><div class="label">مميزات إضافية</div><div class="value">${item.otherFeatures}</div></div>` : ''}
         `;
       } else {
@@ -1815,20 +1822,24 @@
           <div class="box"><div class="label">طريقة الدفع</div><div class="value">${item.paymentMethod || '-'}</div></div>
           <div class="box"><div class="label">موعد الاحتياج</div><div class="value">${item.urgency || '-'}</div></div>
           <div class="box"><div class="label">الغرض</div><div class="value">${item.requestPurpose || '-'}</div></div>
-          ${item.mapUrl ? `<div class="box" style="grid-column: span 2;"><div class="label">رابط الموقع المستهدف (خريطة جوجل)</div><div class="value"><a href="${item.mapUrl}" target="_blank" style="color: #10b981; text-decoration: none; word-break: break-all; font-size: 15px;">${item.mapUrl}</a></div></div>` : ''}
-          ${item.lat && item.lng ? `<div class="box" style="grid-column: span 2;"><div class="label">إحداثيات الموقع المستهدف</div><div class="value"><a href="https://maps.google.com/?q=${item.lat},${item.lng}" target="_blank" style="color: #10b981; text-decoration: none; word-break: break-all; font-size: 15px;">${item.lat}, ${item.lng}</a></div></div>` : ''}
           ${item.details ? `<div class="box" style="grid-column: span 2;"><div class="label">تفاصيل إضافية</div><div class="value">${item.details}</div></div>` : ''}
         `;
       }
 
-      const html = `
-        <html dir="rtl">
-        <head>
-          <title>تفاصيل ${title} - ${item.id}</title>
-          <style>
+      // بناء العنصر المخفي (خارج الشاشة) الذي سيتم تحويله إلى PDF
+      const pdfContainer = document.createElement('div');
+      pdfContainer.style.position = 'fixed';
+      pdfContainer.style.left = '-9999px';
+      pdfContainer.style.top = '0';
+      pdfContainer.style.width = '800px'; // عرض ثابت لضمان دقة وتوحيد الـ PDF
+      pdfContainer.style.backgroundColor = '#f8fafc';
+      pdfContainer.style.padding = '40px';
+      pdfContainer.style.zIndex = '-50';
+      
+      pdfContainer.innerHTML = `
+        <style>
             @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
-            body { font-family: 'Cairo', sans-serif; padding: 40px; color: #1e293b; background: #f8fafc; }
-            .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-top: 5px solid #10b981; }
+            .pdf-wrapper { font-family: 'Cairo', sans-serif; background: #fff; padding: 30px; border-radius: 16px; border-top: 5px solid #10b981; direction: rtl; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
             .header { text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 30px; }
             .title { color: #0f172a; font-size: 28px; font-weight: 900; margin-bottom: 5px; }
             .subtitle { color: #10b981; font-size: 18px; font-weight: bold;}
@@ -1843,35 +1854,64 @@
             .box { background: #f8fafc; padding: 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
             .label { font-size: 13px; color: #64748b; margin-bottom: 5px; font-weight: bold; }
             .value { font-size: 18px; font-weight: 900; color: #0f172a; }
-            .footer { text-align: center; color: #64748b; font-size: 14px; margin-top: 40px; border-top: 2px solid #f1f5f9; padding-top: 20px; font-weight: bold; line-height: 1.6;}
-          </style>
-        </head>
-        <body>
-          <div class="container">
+            
+            .footer { text-align: center; color: #64748b; font-size: 14px; margin-top: 30px; border-top: 2px solid #f1f5f9; padding-top: 20px; font-weight: bold; line-height: 1.8;}
+        </style>
+        <div class="pdf-wrapper" id="pdf-content">
             <div class="header">
-              <h1 class="title">منصة عبدالله آل يحيى العقارية</h1>
-              <div class="subtitle">${title} | المرجع: ${item.id}</div>
+                <h1 class="title">منصة عبدالله آل يحيى العقارية</h1>
+                <div class="subtitle">${title} | المرجع: ${item.id}</div>
             </div>
             
             ${pdfImagesHtml}
             
             <div class="details-grid">
-              ${detailsHtml}
+                ${detailsHtml}
             </div>
+            
             <div class="footer">
-              للتواصل والاستفسار: ${item.ownerName || 'غير محدد'} - ${item.phone || 'غير محدد'}<br>
-              تم إصدار الملف تلقائياً بتاريخ ${new Date().toLocaleDateString('ar-SA')}
+                <div style="font-size: 18px; color: #0f172a; margin-bottom: 5px;">شركة قمة تباريج العقارية</div>
+                ترخيص فال: 1100245617 | للتواصل: ${item.phone || '0530666633'}<br>
+                تاريخ الإصدار: ${new Date().toLocaleDateString('ar-SA')}
             </div>
-          </div>
-          <script>
-            window.onload = function() { setTimeout(function() { window.print(); }, 800); }
-          <\/script>
-        </body>
-        </html>
+        </div>
       `;
-      win.document.write(html);
-      win.document.close();
+
+      document.body.appendChild(pdfContainer);
+
+      // تأخير 1.5 ثانية للسماح بتحميل الصور والخطوط بشكل كامل قبل التقاط الشاشة
+      setTimeout(() => {
+        html2canvas(pdfContainer.querySelector('#pdf-content'), {
+          scale: 2, // جودة ممتازة للـ PDF
+          useCORS: true, // مهم جداً لتحميل الصور من ImgBB
+          backgroundColor: '#ffffff'
+        }).then(canvas => {
+          const imgData = canvas.toDataURL('image/png');
+          
+          // إعداد jsPDF بمقاس A4 طولي
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF('p', 'mm', 'a4');
+          
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+          
+          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+          
+          // تحميل الملف للمستخدم
+          pdf.save(`TM_PLUS_${title}_${item.id}.pdf`);
+          
+          // تنظيف الصفحة من العنصر المؤقت
+          document.body.removeChild(pdfContainer);
+          showToast('تم تصدير ملف PDF بنجاح وبتنسيق A4!');
+          
+        }).catch(err => {
+          console.error('Error generating PDF:', err);
+          showToast('فشل إنشاء الـ PDF، يرجى المحاولة مرة أخرى أو التأكد من سرعة الاتصال');
+          document.body.removeChild(pdfContainer);
+        });
+      }, 1500); 
     }
+    window.exportPDF = exportPDF;
   </script>
 </body>
 </html>
