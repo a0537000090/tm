@@ -334,6 +334,24 @@
     
     const IMGBB_API_KEY = '346c3e5151b4da39a9dbfef70089ef54';
 
+    // إضافة الدالة المسؤولة عن تبديل حقول المباني عند اختيار "أرض"
+    window.toggleBuildingFields = function() {
+        const propSelect = document.getElementById('f-prop');
+        if (!propSelect) return;
+        
+        const buildingFields = document.querySelectorAll('.building-field');
+        if (propSelect.value === 'أرض') {
+            buildingFields.forEach(el => el.style.display = 'none');
+            // تصفير القيم حتى لا تُحفظ بالغلط
+            if (document.getElementById('f-rooms')) document.getElementById('f-rooms').value = '';
+            if (document.getElementById('f-baths')) document.getElementById('f-baths').value = '';
+            if (document.getElementById('f-age')) document.getElementById('f-age').value = '';
+            if (document.getElementById('f-floors')) document.getElementById('f-floors').value = '';
+        } else {
+            buildingFields.forEach(el => el.style.display = 'block');
+        }
+    };
+
     // دالة إنشاء الهيكل المشترك لقالب الكرت (بالمقاسات المعدلة لضمان وضوح النصوص وعدم القص)
     function buildFlyerDOM(item, flyerElement) {
         const priceText = item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'السعر حسب الطلب';
@@ -401,14 +419,22 @@
                   <span class="text-slate-400 text-base">المساحة</span>
                   <span class="text-slate-900 text-[22px]">${item.landArea || '-'} م²</span>
                 </div>
+                ${item.propertyType !== 'أرض' ? `
                 <div class="flex flex-col border-b border-slate-100 pb-2">
                   <span class="text-slate-400 text-base">الغرف / دورات المياه</span>
                   <span class="text-slate-900 text-[22px]">${item.rooms || '-'} غرف | ${item.bathrooms || '-'} حمامات</span>
                 </div>
+                ` : `
+                <div class="flex flex-col border-b border-slate-100 pb-2">
+                  <span class="text-slate-400 text-base">الأطوال</span>
+                  <span dir="ltr" class="text-slate-900 text-[22px] text-right">${item.dimensions || '-'}</span>
+                </div>
+                `}
                 <div class="flex flex-col border-b border-slate-100 pb-2 col-span-2">
                   <span class="text-slate-400 text-base">الشارع والواجهات</span>
                   <span class="text-slate-900 text-[22px] leading-relaxed text-right">${streetStr}</span>
                 </div>
+                ${item.propertyType !== 'أرض' ? `
                 <div class="flex flex-col border-b border-slate-100 pb-2">
                   <span class="text-slate-400 text-base">عمر العقار</span>
                   <span class="text-slate-900 text-[22px]">${item.propertyAge || '-'}</span>
@@ -417,6 +443,7 @@
                   <span class="text-slate-400 text-base">الأطوال</span>
                   <span dir="ltr" class="text-slate-900 text-[22px] text-right">${item.dimensions || '-'}</span>
                 </div>
+                ` : ''}
                 <div class="flex flex-col pb-1">
                   <span class="text-slate-400 text-base">حالة العقار</span>
                   <span class="text-[22px] ${item.status === 'مباع' ? 'text-rose-600' : 'text-emerald-600'}">${item.status || 'متاح'}</span>
@@ -634,8 +661,8 @@
                     </div>
                     <div class="bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center">
                         <i data-lucide="home" class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500 mb-1 sm:mb-2"></i>
-                        <span class="text-[10px] sm:text-xs text-slate-500 mb-1">الغرف</span>
-                        <span class="font-bold text-slate-800 text-xs sm:text-base">${item.rooms || '-'} غرف</span>
+                        <span class="text-[10px] sm:text-xs text-slate-500 mb-1">${item.propertyType === 'أرض' ? 'الأطوال' : 'الغرف'}</span>
+                        <span class="font-bold text-slate-800 text-xs sm:text-base">${item.propertyType === 'أرض' ? (item.dimensions || '-') : (item.rooms || '-') + ' غرف'}</span>
                     </div>
                     <div class="bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center">
                         <i data-lucide="signpost" class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500 mb-1 sm:mb-2"></i>
@@ -648,8 +675,10 @@
                     <div class="p-4 sm:p-5 border-b border-slate-100 bg-slate-50 font-black text-sm sm:text-base text-slate-800 flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500"></i> تفاصيل إضافية</div>
                     <div class="p-4 sm:p-5 space-y-2 sm:space-y-3 text-xs sm:text-sm">
                         <div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500">الأطوال</span><span class="font-bold text-slate-800">${item.dimensions || '-'}</span></div>
+                        ${item.propertyType !== 'أرض' ? `
                         <div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500">دورات المياه</span><span class="font-bold text-slate-800">${item.bathrooms || '-'}</span></div>
                         <div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500">عمر العقار</span><span class="font-bold text-slate-800">${item.propertyAge || '-'}</span></div>
+                        ` : ''}
                         <div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500">قابلية التفاوض</span><span class="font-bold text-slate-800">${item.isNegotiable || 'نعم'}</span></div>
                         ${item.otherFeatures ? `<div class="flex flex-col mt-2"><span class="text-slate-500 mb-1">المميزات:</span><span class="font-bold text-slate-800 leading-relaxed">${item.otherFeatures}</span></div>` : ''}
                     </div>
@@ -1173,7 +1202,7 @@
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الشارع:</span><span class="font-medium text-white truncate max-w-[150px] sm:max-w-[200px]">${streetSummaryText}</span></div>
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">المساحة:</span><span class="font-medium text-white">${item.landArea || '-'} م²</span></div>
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الأطوال:</span><span class="font-medium text-white">${item.dimensions || '-'}</span></div>
-                        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الغرف / المياه:</span><span class="font-medium text-white">${item.rooms || '-'}غ • ${item.bathrooms || '-'}ح</span></div>
+                        ${item.propertyType === 'أرض' ? '' : `<div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الغرف / المياه:</span><span class="font-medium text-white">${item.rooms || '-'}غ • ${item.bathrooms || '-'}ح</span></div>`}
                         ${item.roi > 0 ? `<div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">العائد:</span><span class="font-bold text-emerald-400">${item.roi}%</span></div>` : ''}
                         <div class="flex items-center justify-between pt-2"><span class="text-slate-500 text-[10px] sm:text-xs">السعر:</span><span class="text-lg sm:text-xl font-black text-emerald-400">${item.price ? Number(item.price).toLocaleString() : 'حسب الطلب'} ر.س</span></div>
                       ` : `
@@ -1279,9 +1308,11 @@
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800 col-span-2 md:col-span-1"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">السعر المطلوب</div><div class="text-sm sm:text-base font-black text-emerald-400">${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}</div></div>
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800 col-span-2 md:col-span-1"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">المدينة / الحي</div><div class="text-xs sm:text-base font-bold text-white">${item.city} - ${item.district || '-'}</div></div>
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800 col-span-2"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">الشارع وتفاصيله</div><div class="text-xs sm:text-base font-bold text-white">${fullStreetStr}</div></div>
-            <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">المساحة والأدوار</div><div class="text-xs sm:text-base font-bold text-white">${item.landArea || '-'} م² • ${item.floors || '-'} أدوار</div></div>
-            <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">الغرف ودورات المياه</div><div class="text-xs sm:text-base font-bold text-white">${item.rooms || '-'} غرف • ${item.bathrooms || '-'} حمامات</div></div>
-            <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">عمر العقار</div><div class="text-xs sm:text-base font-bold text-white">${item.propertyAge || '-'}</div></div>
+            
+            <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">${item.propertyType === 'أرض' ? 'المساحة' : 'المساحة والأدوار'}</div><div class="text-xs sm:text-base font-bold text-white">${item.landArea || '-'} م² ${item.propertyType !== 'أرض' ? '• ' + (item.floors || '-') + ' أدوار' : ''}</div></div>
+            ${item.propertyType !== 'أرض' ? `<div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">الغرف ودورات المياه</div><div class="text-xs sm:text-base font-bold text-white">${item.rooms || '-'} غرف • ${item.bathrooms || '-'} حمامات</div></div>` : ''}
+            ${item.propertyType !== 'أرض' ? `<div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">عمر العقار</div><div class="text-xs sm:text-base font-bold text-white">${item.propertyAge || '-'}</div></div>` : ''}
+            
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">العائد الاستثماري</div><div class="text-xs sm:text-base font-bold text-emerald-400">${item.roi ? item.roi + '%' : '-'}</div></div>
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">رقم المخطط/القطعة</div><div class="text-xs sm:text-base font-bold text-white">${item.planNumber || '-'} / ${item.plotNumber || '-'}</div></div>
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">حالة الصك ورقمها</div><div class="text-xs sm:text-base font-bold text-white">${item.deedType || '-'} (${item.deedNumber || '-'})</div></div>
@@ -1607,7 +1638,7 @@
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">صفة مقدم العرض</label><select id="f-owner-role" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white"><option value="مالك" ${data.ownerRole==='مالك'?'selected':''}>مالك</option><option value="وسيط عقاري" ${data.ownerRole==='وسيط عقاري'?'selected':''}>وسيط عقاري</option></select></div>
             <div>
               <label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">نوع العقار</label>
-              <select id="f-prop" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white cursor-pointer" required>
+              <select id="f-prop" onchange="toggleBuildingFields()" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white cursor-pointer" required>
                 ${propertyOptionsHtml}
               </select>
             </div>
@@ -1643,10 +1674,10 @@
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">رقم القطعة</label><input type="text" id="f-plot" value="${data.plotNumber || ''}" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
             <div class="md:col-span-2"><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">رابط الخريطة (اختياري)</label><input type="text" id="f-map" value="${data.mapUrl || ''}" placeholder="https://maps.app.goo.gl/..." class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
             
-            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الغرف</label><input type="text" id="f-rooms" value="${data.rooms || ''}" placeholder="5" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
-            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">دورات المياه</label><input type="text" id="f-baths" value="${data.bathrooms || ''}" placeholder="6" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
-            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">عمر العقار</label><input type="text" id="f-age" value="${data.propertyAge || ''}" placeholder="جديد" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
-            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">عدد الأدوار</label><input type="text" id="f-floors" value="${data.floors || ''}" placeholder="2" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
+            <div class="building-field"><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الغرف</label><input type="text" id="f-rooms" value="${data.rooms || ''}" placeholder="5" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
+            <div class="building-field"><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">دورات المياه</label><input type="text" id="f-baths" value="${data.bathrooms || ''}" placeholder="6" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
+            <div class="building-field"><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">عمر العقار</label><input type="text" id="f-age" value="${data.propertyAge || ''}" placeholder="جديد" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
+            <div class="building-field"><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">عدد الأدوار</label><input type="text" id="f-floors" value="${data.floors || ''}" placeholder="2" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
             
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">السعر المطلوب (ر.س)</label><input type="number" id="f-price" value="${data.price || ''}" oninput="calculateROI()" placeholder="1850000" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الدخل الإيجاري السنوي</label><input type="number" id="f-rent" value="${data.rentIncome || ''}" oninput="calculateROI()" placeholder="120000" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
@@ -1658,7 +1689,7 @@
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">رقم الصك</label><input type="text" id="f-deed-num" value="${data.deedNumber || ''}" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
           </div>
           
-          <div class="bg-slate-950 border border-slate-800 p-3 sm:p-4 rounded-xl sm:rounded-2xl">
+          <div class="bg-slate-950 border border-slate-800 p-3 sm:p-4 rounded-xl sm:rounded-2xl mt-4">
             <div class="flex justify-between items-center mb-2 sm:mb-3">
               <label class="block text-[11px] sm:text-xs font-bold text-slate-400">صور العقار</label>
               <span id="upload-status" class="hidden"></span>
@@ -1676,8 +1707,8 @@
             <button type="button" onclick="addImageInput()" class="mt-2 sm:mt-3 text-[10px] sm:text-[11px] text-slate-400 hover:text-emerald-400 font-bold flex items-center gap-1 transition"><i data-lucide="link" class="w-3 h-3"></i> إضافة رابط صورة يدوياً (اختياري)</button>
           </div>
 
-          <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">مميزات إضافية</label><input type="text" id="f-other" value="${data.otherFeatures || ''}" placeholder="دخول ذكي، مسبح..." class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+          <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1 mt-4">مميزات إضافية</label><input type="text" id="f-other" value="${data.otherFeatures || ''}" placeholder="دخول ذكي، مسبح..." class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mt-4">
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الاسم</label><input type="text" id="f-name" value="${data.ownerName || 'عبدالله آل يحيى'}" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" required /></div>
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الجوال</label><input type="text" id="f-phone" value="${data.phone || '0530666633'}" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" required /></div>
           </div>
@@ -1702,7 +1733,7 @@
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">صفة الطلب</label><select id="f-req-role" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white"><option value="أنا مشتري">أنا مشتري</option><option value="وسيط">وسيط</option></select></div>
             <div>
               <label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">نوع العقار</label>
-              <select id="f-prop" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white cursor-pointer" required>
+              <select id="f-prop" onchange="toggleBuildingFields()" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white cursor-pointer" required>
                 ${propertyOptionsHtml}
               </select>
             </div>
@@ -1727,8 +1758,8 @@
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">طريقة الدفع</label><select id="f-payment" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white"><option value="نقداً">نقداً</option><option value="تمويل بنكي">تمويل بنكي</option></select></div>
             <div class="lg:col-span-3"><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الغرض</label><input type="text" id="f-purpose" value="${data.requestPurpose || 'السكن'}" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
           </div>
-          <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">تفاصيل إضافية</label><textarea id="f-details" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white h-20">${data.details || ''}</textarea></div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+          <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1 mt-4">تفاصيل إضافية</label><textarea id="f-details" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white h-20">${data.details || ''}</textarea></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mt-4">
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الاسم</label><input type="text" id="f-name" value="${data.ownerName || 'عميل'}" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" required /></div>
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الجوال</label><input type="text" id="f-phone" value="${data.phone || '0500000000'}" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" required /></div>
           </div>
@@ -1736,6 +1767,7 @@
       }
       
       initPickerMap(data.lat, data.lng);
+      setTimeout(() => { toggleBuildingFields(); }, 50);
     }
 
     async function handleFormSubmit(e) {
@@ -1769,10 +1801,10 @@
         payload.dimensions = document.getElementById('f-dim').value;
         payload.planNumber = document.getElementById('f-plan').value;
         payload.plotNumber = document.getElementById('f-plot').value;
-        payload.rooms = document.getElementById('f-rooms').value;
-        payload.bathrooms = document.getElementById('f-baths').value;
-        payload.propertyAge = document.getElementById('f-age').value;
-        payload.floors = document.getElementById('f-floors').value;
+        payload.rooms = document.getElementById('f-rooms') ? document.getElementById('f-rooms').value : '';
+        payload.bathrooms = document.getElementById('f-baths') ? document.getElementById('f-baths').value : '';
+        payload.propertyAge = document.getElementById('f-age') ? document.getElementById('f-age').value : '';
+        payload.floors = document.getElementById('f-floors') ? document.getElementById('f-floors').value : '';
         payload.price = document.getElementById('f-price').value;
         payload.rentIncome = document.getElementById('f-rent').value;
         const p = parseFloat(payload.price || 0);
@@ -1912,8 +1944,8 @@
           <div class="box"><div class="label">الأطوال</div><div class="value">${item.dimensions || '-'}</div></div>
           <div class="box" style="grid-column: span 2;"><div class="label">الشارع وتفاصيل العرض</div><div class="value">${streetDetailsStr}</div></div>
           <div class="box"><div class="label">السعر</div><div class="value">${item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب'}</div></div>
-          <div class="box"><div class="label">عمر العقار</div><div class="value">${item.propertyAge || '-'}</div></div>
-          <div class="box"><div class="label">الغرف / دورات المياه</div><div class="value">${item.rooms || '-'} غرف / ${item.bathrooms || '-'} حمامات</div></div>
+          ${item.propertyType !== 'أرض' ? `<div class="box"><div class="label">عمر العقار</div><div class="value">${item.propertyAge || '-'}</div></div>` : ''}
+          ${item.propertyType !== 'أرض' ? `<div class="box"><div class="label">الغرف / دورات المياه</div><div class="value">${item.rooms || '-'} غرف / ${item.bathrooms || '-'} حمامات</div></div>` : ''}
           ${item.rentIncome ? `<div class="box"><div class="label">الدخل الإيجاري</div><div class="value">${Number(item.rentIncome).toLocaleString()} ر.س</div></div>` : ''}
           ${item.roi ? `<div class="box"><div class="label">العائد الاستثماري</div><div class="value" style="color:#10b981;">${item.roi}% سنوياً</div></div>` : ''}
           ${item.mapUrl ? `<div class="box" style="grid-column: span 2;"><div class="label">رابط الموقع (خريطة جوجل)</div><div class="value"><a href="${item.mapUrl}" target="_blank" style="color: #10b981; text-decoration: none; word-break: break-all; font-size: 15px;">${item.mapUrl}</a></div></div>` : ''}
