@@ -333,7 +333,7 @@
     
     const IMGBB_API_KEY = '346c3e5151b4da39a9dbfef70089ef54';
 
-    // 1. الدالة المسؤولة عن تبديل حقول المباني وإظهار حقل "سعر المتر" للأراضي
+    // الدالة المسؤولة عن تبديل حقول المباني وإظهار حقل "سعر المتر" للأراضي
     window.toggleBuildingFields = function() {
         const propSelect = document.getElementById('f-prop');
         if (!propSelect) return;
@@ -361,7 +361,7 @@
         }
     };
 
-    // 2. دالة حساب الأسعار المترابطة (المساحة، سعر المتر، السعر الإجمالي)
+    // دالة حساب الأسعار المترابطة (المساحة، سعر المتر، السعر الإجمالي)
     window.calculatePriceLogic = function(changedField) {
         const areaInput = document.getElementById('f-area');
         const priceInput = document.getElementById('f-price');
@@ -384,7 +384,6 @@
             }
         }
         else if (changedField === 'area') {
-            // الأولوية للسعر الإجمالي لاستنتاج سعر المتر، أو العكس
             if (area > 0 && !isNaN(tp)) {
                 meterPriceInput.value = +(tp / area).toFixed(2);
             } else if (area > 0 && !isNaN(mp) && isNaN(tp)) {
@@ -646,6 +645,7 @@
         }
     }
 
+    // دالة عرض الواجهة للعميل مع تعديل مكان سعر المتر
     function renderCustomerUI(item) {
         const container = document.getElementById('customer-view-container');
         const isOffer = item.type === 'offer';
@@ -718,9 +718,6 @@
                 <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-6 sm:mb-8">
                     <div class="p-4 sm:p-5 border-b border-slate-100 bg-slate-50 font-black text-sm sm:text-base text-slate-800 flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500"></i> تفاصيل إضافية</div>
                     <div class="p-4 sm:p-5 space-y-2 sm:space-y-3 text-xs sm:text-sm">
-                        ${item.propertyType === 'أرض' && item.meterPrice ? `
-                        <div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500">سعر المتر</span><span class="font-bold text-emerald-600">${Number(item.meterPrice).toLocaleString()} ر.س</span></div>
-                        ` : ''}
                         <div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500">الأطوال</span><span class="font-bold text-slate-800">${item.dimensions || '-'}</span></div>
                         ${item.propertyType !== 'أرض' ? `
                         <div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500">دورات المياه</span><span class="font-bold text-slate-800">${item.bathrooms || '-'}</span></div>
@@ -762,15 +759,22 @@
             ${imagesHtml}
 
             <div class="max-w-4xl mx-auto px-4">
-                <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="mb-6 flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div>
                         <span class="inline-block bg-emerald-100 text-emerald-700 px-2 sm:px-3 py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-bold mb-2">رقم المرجع: ${item.id}</span>
                         <h2 class="text-xl sm:text-2xl md:text-3xl font-black text-slate-800 mb-1 sm:mb-2">${isOffer ? `${item.propertyType} للـ${item.offerType || 'بيع'}` : `مطلوب ${item.propertyType}`}</h2>
                         <p class="text-xs sm:text-sm text-slate-500 flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i> ${item.city} ${item.district ? '- ' + item.district : ''}</p>
                     </div>
-                    <div class="bg-emerald-50 border border-emerald-100 p-3 sm:p-4 rounded-xl sm:rounded-2xl md:text-left text-center">
+                    
+                    <div class="bg-emerald-50 border border-emerald-100 p-3 sm:p-4 rounded-xl sm:rounded-2xl md:text-left text-center flex flex-col justify-center min-w-[200px] shadow-sm">
                         <div class="text-[11px] sm:text-sm text-emerald-600 font-bold mb-0.5 sm:mb-1">${isOffer ? 'السعر الإجمالي' : 'الميزانية القصوى'}</div>
                         <div class="text-xl sm:text-2xl font-black text-emerald-600">${item.price || item.priceMax ? Number(item.price || item.priceMax).toLocaleString() + ' ر.س' : 'حسب الطلب'}</div>
+                        
+                        ${isOffer && item.propertyType === 'أرض' && item.meterPrice ? `
+                        <div class="mt-2 pt-2 border-t border-emerald-200 text-xs sm:text-sm font-bold text-emerald-700 flex justify-between items-center gap-4">
+                            <span>سعر المتر:</span>
+                            <span>${Number(item.meterPrice).toLocaleString()} ر.س</span>
+                        </div>` : ''}
                     </div>
                 </div>
 
@@ -1686,7 +1690,6 @@
         if(bOffer) bOffer.className = "flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition bg-emerald-600 text-white";
         if(bReq) bReq.className = "flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition bg-slate-950 text-slate-400 border border-slate-800";
         
-        // النموذج مع حقول الأسعار المترابطة
         fields.innerHTML = `
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">نوع العملية</label><select id="f-offer-type" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white"><option value="بيع" ${data.offerType==='بيع'?'selected':''}>بيع</option><option value="إيجار" ${data.offerType==='إيجار'?'selected':''}>إيجار</option><option value="بيع أو إيجار" ${data.offerType==='بيع أو إيجار'?'selected':''}>بيع أو إيجار</option></select></div>
@@ -1719,7 +1722,6 @@
               <div id="street-widths-container" class="grid grid-cols-2 gap-2 sm:gap-3"></div>
             </div>
             
-            <!-- ربط المساحة وسعر المتر وإجمالي السعر -->
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">مساحة الأرض (م²)</label><input type="number" id="f-area" value="${data.landArea || ''}" oninput="calculatePriceLogic('area')" placeholder="450" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
             <div class="land-field" style="display:none;"><label class="block text-[11px] sm:text-xs font-bold text-emerald-400 mb-1">سعر المتر (ر.س)</label><input type="number" id="f-meter-price" value="${data.meterPrice || ''}" oninput="calculatePriceLogic('meter')" placeholder="5000" class="w-full bg-emerald-950/20 border border-emerald-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-emerald-400" /></div>
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">السعر الإجمالي (ر.س)</label><input type="number" id="f-price" value="${data.price || ''}" oninput="calculatePriceLogic('total')" placeholder="1850000" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
@@ -1857,10 +1859,7 @@
         payload.streetWidths = Array.from(widthInputs).map(i => i.value).filter(v => v.trim() !== '');
 
         payload.landArea = document.getElementById('f-area').value;
-        
-        // حفظ سعر المتر 
         payload.meterPrice = document.getElementById('f-meter-price') ? document.getElementById('f-meter-price').value : '';
-        
         payload.dimensions = document.getElementById('f-dim').value;
         payload.planNumber = document.getElementById('f-plan').value;
         payload.plotNumber = document.getElementById('f-plot').value;
@@ -2090,5 +2089,3 @@
   </script>
 </body>
 </html>
-
-```
