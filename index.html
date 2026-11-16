@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -26,6 +27,14 @@
     .leaflet-control-layers { border-radius: 12px !important; border: 1px solid #334155 !important; background-color: #0f172a !important; color: #f8fafc !important; }
     .leaflet-control-layers-toggle { width: 36px !important; height: 36px !important; }
     .leaflet-control-layers-list label { display: flex; items-align: center; gap: 8px; margin-bottom: 5px; font-size: 12px; font-weight: bold; cursor: pointer; }
+    
+    /* إصلاح تبعثر الحروف العربية في html2canvas */
+    #flyer-template, #flyer-template * {
+      letter-spacing: 0px !important;
+      word-spacing: normal !important;
+      font-feature-settings: "liga" 1, "calt" 1;
+      text-rendering: optimizeLegibility;
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen pb-16 selection:bg-emerald-500 selection:text-white">
@@ -227,7 +236,7 @@
   </div>
 
   <!-- قالب الكرت التسويقي -->
-  <div id="flyer-template" class="fixed -left-[9999px] top-0 w-[1280px] h-[720px] bg-white text-slate-900 flex flex-col overflow-hidden z-[-50]" dir="rtl" style="font-family: 'Cairo', sans-serif;"></div>
+  <div id="flyer-template" class="fixed -left-[9999px] top-0 w-[1280px] h-[720px] bg-white text-slate-900 flex flex-col overflow-hidden z-[-50]" dir="rtl" style="font-family: 'Cairo', sans-serif; letter-spacing: 0px;"></div>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -388,20 +397,15 @@
         const landFields = document.querySelectorAll('.land-field');
         
         if (propSelect.value === 'أرض') {
-            // إخفاء المباني
             buildingFields.forEach(el => el.style.display = 'none');
             if (document.getElementById('f-rooms')) document.getElementById('f-rooms').value = '';
             if (document.getElementById('f-baths')) document.getElementById('f-baths').value = '';
             if (document.getElementById('f-age')) document.getElementById('f-age').value = '';
             if (document.getElementById('f-floors')) document.getElementById('f-floors').value = '';
             
-            // إظهار حقول الأرض (سعر المتر)
             landFields.forEach(el => el.style.display = 'block');
         } else {
-            // إظهار المباني
             buildingFields.forEach(el => el.style.display = 'block');
-            
-            // إخفاء حقول الأرض (سعر المتر)
             landFields.forEach(el => el.style.display = 'none');
             if (document.getElementById('f-meter-price')) document.getElementById('f-meter-price').value = '';
         }
@@ -424,12 +428,12 @@
 
         if (changedField === 'meter') {
             if (area > 0 && !isNaN(mp)) {
-                priceInput.value = Math.round(mp * area); // حساب السعر الإجمالي
+                priceInput.value = Math.round(mp * area);
             }
         } 
         else if (changedField === 'total') {
             if (area > 0 && !isNaN(tp)) {
-                meterPriceInput.value = +(tp / area).toFixed(2); // استنتاج سعر المتر
+                meterPriceInput.value = +(tp / area).toFixed(2);
             }
         }
         else if (changedField === 'area') {
@@ -443,7 +447,7 @@
         if (typeof calculateROI === 'function') calculateROI();
     };
 
-    // دالة إنشاء الهيكل المشترك لقالب الكرت
+    // دالة إنشاء الهيكل المشترك لقالب الكرت (تم إصلاح تباعد الحروف لضمان عدم تبعثر الكلمات العربية)
     function buildFlyerDOM(item, flyerElement) {
         const priceText = item.isOnBid ? 'على السوم' : (item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'السعر حسب الطلب');
         let offerTypeTitle = 'عرض عقاري';
@@ -462,9 +466,9 @@
         if (item.rentIncome && item.rentIncome > 0) {
             incomeHtml = `
               <div class="bg-emerald-50 rounded-2xl py-3 px-4 text-center border border-emerald-200 shadow-sm mt-3">
-                <span class="text-emerald-800 text-base font-bold block mb-0.5">الدخل الإيجاري السنوي</span>
-                <div class="text-[28px] font-black text-emerald-600">${Number(item.rentIncome).toLocaleString()} ر.س</div>
-                ${!item.isOnBid && item.roi && item.roi > 0 ? `<div class="text-emerald-700 font-bold text-sm mt-0.5">عائد استثماري ${item.roi}%</div>` : ''}
+                <span class="text-emerald-800 text-base font-bold block mb-0.5" style="letter-spacing: 0;">الدخل الإيجاري السنوي</span>
+                <div class="text-[28px] font-black text-emerald-600" style="letter-spacing: 0;">${Number(item.rentIncome).toLocaleString()} ر.س</div>
+                ${!item.isOnBid && item.roi && item.roi > 0 ? `<div class="text-emerald-700 font-bold text-sm mt-0.5" style="letter-spacing: 0;">عائد استثماري ${item.roi}%</div>` : ''}
               </div>
             `;
         }
@@ -477,24 +481,24 @@
         ` : `<div class="flex-1 my-5 w-full"></div>`;
 
         flyerElement.innerHTML = `
-          <div class="relative w-full h-full bg-slate-50 text-slate-900 flex p-8 gap-8 box-border" style="background-color: #f8fafc; font-family: 'Cairo', sans-serif; direction: rtl;">
+          <div class="relative w-full h-full bg-slate-50 text-slate-900 flex p-8 gap-8 box-border" style="background-color: #f8fafc; font-family: 'Cairo', sans-serif; direction: rtl; letter-spacing: 0px;">
             <div class="absolute top-0 right-0 bottom-0 w-5 bg-emerald-600"></div>
             
             <div class="w-[42%] flex flex-col justify-between pr-4 border-l-2 border-slate-200 pl-6 py-2">
               <div>
-                <span class="inline-block px-3 py-1 rounded-full bg-slate-200 text-slate-600 font-bold text-base mb-3 shadow-sm border border-slate-300">رقم المرجع: ${item.id}</span>
-                <h2 class="text-[42px] font-black text-slate-900 leading-tight mb-2">
+                <span class="inline-block px-3 py-1 rounded-full bg-slate-200 text-slate-600 font-bold text-base mb-3 shadow-sm border border-slate-300" style="letter-spacing: 0;">رقم المرجع: ${item.id}</span>
+                <h2 class="text-[42px] font-black text-slate-900 leading-tight mb-2" style="letter-spacing: 0;">
                   ${item.propertyType} ${offerTypeTitle}
                 </h2>
-                <p class="text-[24px] font-bold text-slate-500">${item.city} ${item.district ? ' - حي ' + item.district : ''}</p>
+                <p class="text-[24px] font-bold text-slate-500" style="letter-spacing: 0;">${item.city} ${item.district ? ' - حي ' + item.district : ''}</p>
               </div>
 
               ${imageBlockHtml}
 
               <div class="space-y-4 mt-auto">
                 <div class="bg-white rounded-2xl py-4 px-5 text-center border border-slate-200 shadow-sm">
-                  <span class="text-slate-600 text-lg font-bold block mb-1">السعر المطلوب</span>
-                  <div class="text-[38px] font-black ${item.isOnBid ? 'text-amber-600' : 'text-slate-900'} tracking-tight">${priceText}</div>
+                  <span class="text-slate-600 text-lg font-bold block mb-1" style="letter-spacing: 0;">السعر المطلوب</span>
+                  <div dir="rtl" style="letter-spacing: 0px !important; font-family: 'Cairo', sans-serif;" class="text-[38px] font-black ${item.isOnBid ? 'text-amber-600' : 'text-slate-900'}">${priceText}</div>
                 </div>
                 ${incomeHtml}
               </div>
@@ -565,23 +569,31 @@
     }
 
     async function generateSingleFlyerBase64(item) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const flyer = document.getElementById('flyer-template');
             buildFlyerDOM(item, flyer);
 
-            setTimeout(() => {
-                html2canvas(flyer, {
-                    scale: 1.5, 
-                    useCORS: true, 
-                    backgroundColor: '#f8fafc'
-                }).then(canvas => {
-                    const base64Data = canvas.toDataURL('image/png').split(',')[1];
-                    resolve(base64Data);
-                }).catch(err => {
-                    console.error(err);
-                    resolve(null);
-                });
-            }, 500); 
+            document.fonts.ready.then(() => {
+                setTimeout(() => {
+                    html2canvas(flyer, {
+                        scale: 1.5, 
+                        useCORS: true, 
+                        backgroundColor: '#f8fafc',
+                        onclone: (clonedDoc) => {
+                            const clonedFlyer = clonedDoc.getElementById('flyer-template');
+                            if (clonedFlyer) {
+                                clonedFlyer.style.letterSpacing = '0px';
+                            }
+                        }
+                    }).then(canvas => {
+                        const base64Data = canvas.toDataURL('image/png').split(',')[1];
+                        resolve(base64Data);
+                    }).catch(err => {
+                        console.error(err);
+                        resolve(null);
+                    });
+                }, 500);
+            });
         });
     }
 
@@ -657,22 +669,30 @@
       const flyer = document.getElementById('flyer-template');
       buildFlyerDOM(item, flyer);
 
-      setTimeout(() => {
-        html2canvas(flyer, {
-          scale: 1.5, 
-          useCORS: true, 
-          backgroundColor: '#f8fafc'
-        }).then(canvas => {
-          const link = document.createElement('a');
-          link.download = `حالة_واتساب_${item.id}.png`;
-          link.href = canvas.toDataURL('image/png');
-          link.click();
-          showToast('تم تصميم صورة الحالة (بالعرض) وتحميلها بنجاح!');
-        }).catch(err => {
-          console.error(err);
-          showToast('فشل إنشاء الصورة، يرجى المحاولة لاحقاً');
-        });
-      }, 1000);
+      document.fonts.ready.then(() => {
+        setTimeout(() => {
+          html2canvas(flyer, {
+            scale: 1.5, 
+            useCORS: true, 
+            backgroundColor: '#f8fafc',
+            onclone: (clonedDoc) => {
+              const clonedFlyer = clonedDoc.getElementById('flyer-template');
+              if (clonedFlyer) {
+                clonedFlyer.style.letterSpacing = '0px';
+              }
+            }
+          }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `حالة_واتساب_${item.id}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('تم تصميم صورة الحالة (بالعرض) وتحميلها بنجاح!');
+          }).catch(err => {
+            console.error(err);
+            showToast('فشل إنشاء الصورة، يرجى المحاولة لاحقاً');
+          });
+        }, 700);
+      });
     }
     window.generateFlyerImage = generateFlyerImage;
 
@@ -694,7 +714,6 @@
         }
     }
 
-    // دالة عرض الواجهة للعميل مع دعم "على السوم"
     function renderCustomerUI(item) {
         const container = document.getElementById('customer-view-container');
         const isOffer = item.type === 'offer';
@@ -1368,7 +1387,7 @@
         if (secondaryImages.length > 0) {
           secondaryHtml = `
             <div class="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
-              ${imagesList.map((img, index) => `
+              ${imagesList.map((img) => `
                 <div onclick="document.getElementById('main-modal-img').src='${img}'" 
                      class="h-16 sm:h-20 rounded-lg overflow-hidden bg-white border border-slate-800 p-1 flex items-center justify-center cursor-pointer hover:border-emerald-500 transition">
                   <img src="${img}" alt="صورة مصغرة" class="max-w-full max-h-full object-contain" crossorigin="anonymous" />
