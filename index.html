@@ -980,7 +980,7 @@
         const container = document.getElementById('customer-view-container');
         const isOffer = item.type === 'offer';
         
-        let rawPhone = item.phone || '0530666633';
+        let rawPhone = item.phone || '0537000090';
         let waPhone = rawPhone.startsWith('0') ? '966' + rawPhone.substring(1) : rawPhone;
         let waMessage = `السلام عليكم، أنا مهتم بـ ${item.propertyType} (${item.id}) المعروض في منصتكم.`;
         let waLink = `https://wa.me/${waPhone}?text=${encodeURIComponent(waMessage)}`;
@@ -2192,7 +2192,7 @@
           <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1 mt-4">مميزات إضافية</label><input type="text" id="f-other" value="${data.otherFeatures || ''}" placeholder="دخول ذكي، مسبح..." class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mt-4">
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الاسم</label><input type="text" id="f-name" value="${data.ownerName || 'عبدالله آل يحيى'}" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" required /></div>
-            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الجوال</label><input type="text" id="f-phone" value="${data.phone || '0530666633'}" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" required /></div>
+            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الجوال</label><input type="text" id="f-phone" value="${data.phone || '0537000090'}" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" required /></div>
           </div>
         `;
         
