@@ -356,7 +356,7 @@
     const IMGBB_API_KEY = '346c3e5151b4da39a9dbfef70089ef54';
 
     // ========================================================
-    // الميزة 1: استخراج الإحداثيات تلقائياً من روابط خرائط جوجل
+    // استخراج الإحداثيات تلقائياً من روابط خرائط جوجل
     // ========================================================
     async function extractCoordsFromGoogleMapsUrl(urlInput) {
       const url = (urlInput || '').trim();
@@ -395,10 +395,8 @@
         return null;
       };
 
-      // 1. محاولة الاستخراج المباشر من الرابط المدخل
       let coords = parseCoordsFromString(url);
 
-      // 2. إذا كان الرابط مختصراً (goo.gl أو maps.app.goo.gl) نفك التوجيه تلقائياً
       if (!coords && (url.includes('goo.gl') || url.includes('maps.app'))) {
         try {
           const res = await fetch(`https://unshorten.me/json/${encodeURIComponent(url)}`);
@@ -432,20 +430,24 @@
     window.extractCoordsFromGoogleMapsUrl = extractCoordsFromGoogleMapsUrl;
 
     // ========================================================
-    // الميزة 2: توليد رسم كروكي هندسي SVG يوضح الواجهة والأطوال والشوارع
+    // الرسم الكروكي الهندسي SVG (اختياري عبر showSketch)
     // ========================================================
     function generatePlotSketchSVG(item, options = {}) {
+      // إذا كان خيار الكروكي مغلقاً في السجل، لا نعرضه إلا في المعاينة الحية عند التفعيل
+      if (item.showSketch === false && !options.forcePreview) {
+        return '';
+      }
+
       const facing = item.facing || 'غير محدد';
       const widths = item.streetWidths || [];
       const dimRaw = (item.dimensions || '').trim();
       const areaText = item.landArea ? `${item.landArea} م²` : '';
 
-      // إذا لم يتم تحديد واجهة أو أطوال لا نعرض الكروكي إلا في المعاينة الحية
-      if ((!facing || facing === 'غير محدد') && !dimRaw && !options.forcePreview) {
+      // إذا لم يفعّله المستخدم صراحة ولم يتم إدخال واجهة أو أطوال لا يُعرض تلقائياً
+      if (item.showSketch !== true && (!facing || facing === 'غير محدد') && !dimRaw && !options.forcePreview) {
         return '';
       }
 
-      // تحديد الشوارع على الجهات الأربع (أعلى=شمال، يمين=شرق، أسفل=جنوب، يسار=غرب)
       let streets = { north: null, east: null, south: null, west: null };
       let wIdx = 0;
       const nextWidth = () => (widths[wIdx] ? `عرض ${widths[wIdx++]}م` : 'شارع');
@@ -466,7 +468,6 @@
         if (facing.includes('غربية')) streets.west = nextWidth();
       }
 
-      // تحليل الأطوال (مثال: "15 في 30" أو "15 × 30" أو "15*30" أو "15x30")
       let sideTop = '', sideRight = '', sideBottom = '', sideLeft = '';
       const dimMatch = dimRaw.match(/(\d+(?:\.\d+)?)\s*(?:في|×|\*|x|X|-)\s*(\d+(?:\.\d+)?)/);
       if (dimMatch) {
@@ -485,7 +486,6 @@
 
       return `
         <svg viewBox="0 0 380 260" class="w-full ${heightClass} select-none" xmlns="http://www.w3.org/2000/svg" style="font-family: 'Cairo', sans-serif;">
-          <!-- خلفية المخطط -->
           <rect x="2" y="2" width="376" height="256" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
 
           <!-- بوصلة الشمال -->
@@ -496,28 +496,28 @@
             <text x="0" y="-15" text-anchor="middle" font-size="8" font-weight="900" fill="#0f172a">ش</text>
           </g>
 
-          <!-- الشارع الشمالي (أعلى) -->
+          <!-- الشارع الشمالي -->
           ${streets.north ? `
             <rect x="65" y="14" width="250" height="26" rx="4" fill="#334155"/>
             <line x1="75" y1="27" x2="305" y2="27" stroke="#f8fafc" stroke-width="1.5" stroke-dasharray="8,6"/>
             <text x="190" y="31" text-anchor="middle" font-size="10" font-weight="bold" fill="#ffffff">شارع شمالي (${streets.north})</text>
           ` : `<text x="190" y="32" text-anchor="middle" font-size="10" font-weight="bold" fill="#94a3b8">الحد الشمالي (جار)</text>`}
 
-          <!-- الشارع الجنوبي (أسفل) -->
+          <!-- الشارع الجنوبي -->
           ${streets.south ? `
             <rect x="65" y="220" width="250" height="26" rx="4" fill="#334155"/>
             <line x1="75" y1="233" x2="305" y2="233" stroke="#f8fafc" stroke-width="1.5" stroke-dasharray="8,6"/>
             <text x="190" y="237" text-anchor="middle" font-size="10" font-weight="bold" fill="#ffffff">شارع جنوبي (${streets.south})</text>
           ` : `<text x="190" y="238" text-anchor="middle" font-size="10" font-weight="bold" fill="#94a3b8">الحد الجنوبي (جار)</text>`}
 
-          <!-- الشارع الشرقي (يمين) -->
+          <!-- الشارع الشرقي -->
           ${streets.east ? `
             <rect x="322" y="48" width="26" height="164" rx="4" fill="#334155"/>
             <line x1="335" y1="58" x2="335" y2="202" stroke="#f8fafc" stroke-width="1.5" stroke-dasharray="8,6"/>
             <text x="335" y="130" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#ffffff" transform="rotate(-90 335 130)">شارع شرقي (${streets.east})</text>
           ` : `<text x="335" y="130" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#94a3b8" transform="rotate(-90 335 130)">الحد الشرقي (جار)</text>`}
 
-          <!-- الشارع الغربي (يسار) -->
+          <!-- الشارع الغربي -->
           ${streets.west ? `
             <rect x="32" y="48" width="26" height="164" rx="4" fill="#334155"/>
             <line x1="45" y1="58" x2="45" y2="202" stroke="#f8fafc" stroke-width="1.5" stroke-dasharray="8,6"/>
@@ -542,13 +542,29 @@
     }
     window.generatePlotSketchSVG = generatePlotSketchSVG;
 
+    // تبديل تفعيل/إلغاء الرسم الكروكي في النموذج
+    window.toggleSketchOption = function() {
+      const checkbox = document.getElementById('f-show-sketch');
+      const wrapper = document.getElementById('live-sketch-wrapper');
+      if (!checkbox || !wrapper) return;
+
+      if (checkbox.checked) {
+        wrapper.classList.remove('hidden');
+        updateLiveSketchPreview();
+      } else {
+        wrapper.classList.add('hidden');
+      }
+    };
+
     // تحديث المعاينة الحية للكروكي أثناء تعبئة النموذج
     window.updateLiveSketchPreview = function() {
+      const checkbox = document.getElementById('f-show-sketch');
       const previewContainer = document.getElementById('live-sketch-preview');
-      if (!previewContainer) return;
+      if (!previewContainer || (checkbox && !checkbox.checked)) return;
 
       const widthInputs = document.querySelectorAll('.f-street-width-input');
       const tempItem = {
+        showSketch: true,
         propertyType: document.getElementById('f-prop')?.value || 'أرض',
         facing: document.getElementById('f-facing')?.value || 'غير محدد',
         dimensions: document.getElementById('f-dim')?.value || '',
@@ -665,7 +681,7 @@
         if (typeof calculateROI === 'function') calculateROI();
     };
 
-    // دالة إنشاء الهيكل المشترك لقالب الكرت مع دمج الرسم الكروكي والواجهة
+    // دالة إنشاء الهيكل المشترك لقالب الكرت مع مراعاة خيار الكروكي
     function buildFlyerDOM(item, flyerElement) {
         const priceText = item.isOnBid ? 'على السوم' : (item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'السعر حسب الطلب');
         let offerTypeTitle = 'عرض عقاري';
@@ -1336,7 +1352,7 @@
       } else {
         return items.filter(off => off.type === 'offer' && 
                                    off.city === item.city && 
-                                   (off.propertyType === item.propertyType || !item.propertyType));
+                                   (off.propertyType === item.propertyType || !off.propertyType));
       }
     }
 
@@ -2060,6 +2076,7 @@
         if(bReq) bReq.className = "flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition bg-slate-950 text-slate-400 border border-slate-800";
         
         const isBid = Boolean(data.isOnBid);
+        const isSketchEnabled = data.showSketch === true;
 
         fields.innerHTML = `
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -2117,13 +2134,21 @@
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الأطوال (مثال: 15 في 30)</label><input type="text" id="f-dim" value="${data.dimensions || ''}" oninput="updateLiveSketchPreview()" placeholder="15 في 30" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
           </div>
 
-          <!-- معاينة حية للكروكي الهندسي -->
+          <!-- خيار الرسم الكروكي (اختياري) -->
           <div class="bg-slate-950 border border-slate-800 p-3 sm:p-4 rounded-xl sm:rounded-2xl mt-3">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-[11px] sm:text-xs font-bold text-emerald-400 flex items-center gap-1.5"><i data-lucide="compass" class="w-3.5 h-3.5"></i> معاينة الكروكي التلقائي للحدود والواجهة</span>
-              <span class="text-[10px] text-slate-400">يظهر تلقائياً في الكرت وملف الـ PDF</span>
+            <label class="flex items-center justify-between cursor-pointer select-none">
+              <div class="flex items-center gap-2">
+                <i data-lucide="compass" class="w-4 h-4 text-emerald-400"></i>
+                <div>
+                  <span class="text-xs sm:text-sm font-bold text-white block">إضافة رسم كروكي هندسي للحدود والواجهة (اختياري)</span>
+                  <span class="text-[10px] text-slate-400">عند التفعيل سيظهر الكروكي في صفحة العميل، الكرت التسويقي، وملف الـ PDF</span>
+                </div>
+              </div>
+              <input type="checkbox" id="f-show-sketch" ${isSketchEnabled ? 'checked' : ''} onchange="toggleSketchOption()" class="w-5 h-5 accent-emerald-500 rounded cursor-pointer" />
+            </label>
+            <div id="live-sketch-wrapper" class="${isSketchEnabled ? '' : 'hidden'} mt-3 pt-3 border-t border-slate-800">
+              <div id="live-sketch-preview" class="max-w-sm mx-auto bg-white rounded-xl p-1.5"></div>
             </div>
-            <div id="live-sketch-preview" class="max-w-sm mx-auto bg-white rounded-xl p-1.5"></div>
           </div>
           
           ${pickerHtml}
@@ -2228,7 +2253,7 @@
       setTimeout(() => { 
         toggleBuildingFields(); 
         if (mode === 'offer') {
-          updateLiveSketchPreview();
+          if (isSketchEnabled) updateLiveSketchPreview();
           if (!data.isOnBid) calculateROI();
         }
       }, 50);
@@ -2254,6 +2279,7 @@
       if (addMode === 'offer') {
         const isOnBid = document.getElementById('f-is-on-bid')?.value === 'true';
         payload.isOnBid = isOnBid;
+        payload.showSketch = document.getElementById('f-show-sketch') ? document.getElementById('f-show-sketch').checked : false;
         payload.offerType = document.getElementById('f-offer-type').value;
         payload.ownerRole = document.getElementById('f-owner-role').value;
         payload.district = document.getElementById('f-district').value;
