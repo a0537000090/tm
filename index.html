@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -759,7 +758,7 @@
     };
 
     // ========================================================
-    // التصميم المعماري الفاتح والمشرق للكرت التسويقي (1280x720)
+    // التصميم المعماري الفاتح والمشرق للكرت التسويقي (مُصحح بالكامل لعدم قص الحروف)
     // ========================================================
     function buildFlyerDOM(item, flyerElement) {
         const priceText = item.isOnBid ? 'على السوم' : (item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'السعر حسب الطلب');
@@ -783,13 +782,12 @@
         const facingText = (item.facing && item.facing !== 'غير محدد') ? item.facing : 'غير محدد';
         const phoneDisplay = item.phone || '0537000090';
 
-        // أيقونات هندسية نظيفة بنمط التصميم المعماري
         const icons = {
-          area: `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>`,
-          facing: `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`,
-          street: `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19L8 5"/><path d="M16 5l4 14"/><path d="M12 6v2"/><path d="M12 11v2"/><path d="M12 16v2"/></svg>`,
-          rooms: `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>`,
-          dim: `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M9 5v14"/></svg>`,
+          area: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>`,
+          facing: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`,
+          street: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19L8 5"/><path d="M16 5l4 14"/><path d="M12 6v2"/><path d="M12 11v2"/><path d="M12 16v2"/></svg>`,
+          rooms: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>`,
+          dim: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M9 5v14"/></svg>`,
           phone: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c59b43" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`
         };
 
@@ -800,18 +798,18 @@
         if (propertyImage && sketchSvg) {
             leftVisualHtml = `
               <div class="w-full h-full flex flex-col gap-3">
-                <div class="h-[56%] rounded-[22px] overflow-hidden border-2 border-[#b59449]/60 shadow-md relative bg-white">
-                  <img src="${propertyImage}" class="w-full h-full object-cover" crossorigin="anonymous" />
+                <div class="h-[55%] rounded-[22px] overflow-hidden border-2 border-[#b59449]/60 shadow-md relative bg-white flex items-center justify-center p-1">
+                  <img src="${propertyImage}" class="max-w-full max-h-full object-contain" crossorigin="anonymous" />
                 </div>
-                <div class="h-[44%] rounded-[22px] overflow-hidden border-2 border-[#b59449]/60 shadow-sm bg-white flex items-center justify-center p-2">
+                <div class="h-[45%] rounded-[22px] overflow-hidden border-2 border-[#b59449]/60 shadow-sm bg-white flex items-center justify-center p-2">
                   ${sketchSvg}
                 </div>
               </div>
             `;
         } else if (propertyImage) {
             leftVisualHtml = `
-              <div class="w-full h-full rounded-[26px] overflow-hidden border-2 border-[#b59449]/70 shadow-lg relative bg-white">
-                <img src="${propertyImage}" class="w-full h-full object-cover" crossorigin="anonymous" />
+              <div class="w-full h-full rounded-[26px] overflow-hidden border-2 border-[#b59449]/70 shadow-lg relative bg-white flex items-center justify-center p-2">
+                <img src="${propertyImage}" class="max-w-full max-h-full object-contain" crossorigin="anonymous" />
                 ${item.status === 'مباع' ? `<div class="absolute top-4 right-4 bg-rose-600 text-white font-black px-5 py-1.5 rounded-full text-lg shadow-md">تم البيع</div>` : ''}
               </div>
             `;
@@ -825,29 +823,28 @@
             leftVisualHtml = `
               <div class="w-full h-full rounded-[26px] border-2 border-[#b59449]/50 bg-[#f3efe6] flex flex-col items-center justify-center p-6 text-center shadow-inner">
                 <img src="https://i.ibb.co/zVftH2s1/image.jpg" class="w-28 h-28 rounded-3xl object-cover border-2 border-[#b59449] shadow-md mb-4" crossorigin="anonymous" />
-                <div class="text-2xl font-black text-[#063b2d]">منصة عبدالله آل يحيى العقارية</div>
-                <div class="text-base font-bold text-[#8a6d2b] mt-1">عروض عقارية حصرية وموثوقة</div>
+                <div class="text-2xl font-black text-[#063b2d] leading-normal pb-1">منصة عبدالله آل يحيى العقارية</div>
+                <div class="text-base font-bold text-[#8a6d2b] mt-1 leading-normal">عروض عقارية حصرية وموثوقة</div>
               </div>
             `;
         }
 
-        // الصف الرابع في بطاقة المواصفات يتكيف حسب نوع العقار (أرض أم مبنى)
         const fourthSpecHtml = item.propertyType === 'أرض'
           ? `
-            <div class="flex items-center gap-3">
-              <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0">${icons.dim}</div>
-              <div>
-                <span class="text-xs font-bold text-slate-500 block">الأطوال</span>
-                <span dir="ltr" class="text-[20px] font-black text-slate-900">${item.dimensions || 'غير محدد'}</span>
+            <div class="flex items-start gap-3">
+              <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0 mt-0.5">${icons.dim}</div>
+              <div class="flex-1 min-w-0">
+                <span class="text-xs font-bold text-slate-500 block leading-normal">الأطوال</span>
+                <span dir="ltr" class="text-[19px] font-black text-slate-900 block leading-normal pb-1">${item.dimensions || 'غير محدد'}</span>
               </div>
             </div>
           `
           : `
-            <div class="flex items-center gap-3">
-              <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0">${icons.rooms}</div>
-              <div>
-                <span class="text-xs font-bold text-slate-500 block">التفاصيل</span>
-                <span class="text-[20px] font-black text-slate-900">${item.rooms || '-'} غرف • ${item.bathrooms || '-'} حمامات</span>
+            <div class="flex items-start gap-3">
+              <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0 mt-0.5">${icons.rooms}</div>
+              <div class="flex-1 min-w-0">
+                <span class="text-xs font-bold text-slate-500 block leading-normal">التفاصيل</span>
+                <span class="text-[19px] font-black text-slate-900 block leading-normal pb-1">${item.rooms || '-'} غرف • ${item.bathrooms || '-'} حمامات</span>
               </div>
             </div>
           `;
@@ -859,10 +856,10 @@
             <div class="h-[88px] bg-[#063b2d] border-b-[4px] border-[#c59b43] px-9 flex items-center justify-between shrink-0 shadow-md">
               <div class="flex items-center gap-3.5">
                 <img src="https://i.ibb.co/zVftH2s1/image.jpg" class="w-12 h-12 rounded-xl object-cover border border-[#c59b43]" crossorigin="anonymous" />
-                <span class="text-[28px] font-black text-white">منصة عبدالله آل يحيى العقارية</span>
+                <span class="text-[28px] font-black text-white leading-normal pb-1">منصة عبدالله آل يحيى العقارية</span>
               </div>
               
-              <div class="px-5 py-2 rounded-xl border-2 border-[#c59b43] bg-[#042a20] text-[#f5e7c1] font-black text-[20px] flex items-center gap-3 shadow-sm">
+              <div class="px-5 py-2 rounded-xl border-2 border-[#c59b43] bg-[#042a20] text-[#f5e7c1] font-black text-[20px] flex items-center gap-3 shadow-sm leading-normal">
                 <span>${offerTypeTitle}</span>
                 <span class="text-[#c59b43]">|</span>
                 <span dir="ltr">${item.id}</span>
@@ -870,59 +867,59 @@
             </div>
 
             <!-- جسم البطاقة الرئيسي -->
-            <div class="flex-1 p-7 grid grid-cols-12 gap-7 overflow-hidden">
+            <div class="flex-1 p-7 grid grid-cols-12 gap-7">
               
-              <!-- الجانب الأيمن: الموقع + المواصفات + السعر والتواصل (6 أعمدة) -->
+              <!-- الجانب الأيمن: الموقع + المواصفات + السعر والتواصل -->
               <div class="col-span-6 flex flex-col justify-between gap-4">
                 
                 <!-- بطاقة العنوان والموقع -->
-                <div class="bg-[#fdfcf9] border-2 border-[#d4c49e] rounded-[22px] px-6 py-4 shadow-sm flex flex-col justify-center">
+                <div class="bg-[#fdfcf9] border-2 border-[#d4c49e] rounded-[22px] px-6 py-3.5 shadow-sm flex flex-col justify-center">
                   <div class="flex items-center justify-between mb-1">
-                    <span class="text-sm font-black text-[#8a6d2b] bg-[#f3ebd7] px-3 py-0.5 rounded-lg">${item.propertyType} ${offerTypeTitle}</span>
-                    <span class="text-sm font-bold ${item.status === 'مباع' ? 'text-rose-600' : 'text-emerald-700'}">${item.status || 'متاح'} • ${item.isNegotiable !== 'لا' ? 'قابل للتفاوض' : 'سعر نهائي'}</span>
+                    <span class="text-sm font-black text-[#8a6d2b] bg-[#f3ebd7] px-3 py-1 rounded-lg leading-normal">${item.propertyType} ${offerTypeTitle}</span>
+                    <span class="text-sm font-bold leading-normal ${item.status === 'مباع' ? 'text-rose-600' : 'text-emerald-700'}">${item.status || 'متاح'} • ${item.isNegotiable !== 'لا' ? 'قابل للتفاوض' : 'سعر نهائي'}</span>
                   </div>
-                  <h2 class="text-[34px] font-black text-[#063b2d] leading-snug truncate">
+                  <h2 class="text-[31px] font-black text-[#063b2d] leading-normal pb-1 whitespace-normal">
                     ${item.city}${item.district ? ' - حي ' + item.district : ''}
                   </h2>
                 </div>
 
                 <!-- بطاقة المواصفات بالأيقونات -->
-                <div class="bg-[#fdfcf9] border-2 border-[#d4c49e] rounded-[22px] p-5 shadow-sm flex-1 flex flex-col justify-center gap-4">
-                  <div class="grid grid-cols-2 gap-4">
-                    <div class="flex items-center gap-3">
-                      <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0">${icons.area}</div>
-                      <div>
-                        <span class="text-xs font-bold text-slate-500 block">المساحة</span>
-                        <span class="text-[20px] font-black text-slate-900">${item.landArea || '-'} م²</span>
+                <div class="bg-[#fdfcf9] border-2 border-[#d4c49e] rounded-[22px] p-5 shadow-sm flex-1 flex flex-col justify-center gap-3.5">
+                  <div class="grid grid-cols-2 gap-x-4 gap-y-3.5">
+                    <div class="flex items-start gap-3">
+                      <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0 mt-0.5">${icons.area}</div>
+                      <div class="flex-1 min-w-0">
+                        <span class="text-xs font-bold text-slate-500 block leading-normal">المساحة</span>
+                        <span class="text-[20px] font-black text-slate-900 block leading-normal pb-1">${item.landArea || '-'} م²</span>
                       </div>
                     </div>
 
-                    <div class="flex items-center gap-3">
-                      <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0">${icons.facing}</div>
-                      <div>
-                        <span class="text-xs font-bold text-slate-500 block">الواجهة</span>
-                        <span class="text-[19px] font-black text-slate-900">${facingText}</span>
+                    <div class="flex items-start gap-3">
+                      <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0 mt-0.5">${icons.facing}</div>
+                      <div class="flex-1 min-w-0">
+                        <span class="text-xs font-bold text-slate-500 block leading-normal">الواجهة</span>
+                        <span class="text-[19px] font-black text-slate-900 block leading-normal pb-1 whitespace-normal">${facingText}</span>
                       </div>
                     </div>
 
                     ${fourthSpecHtml}
 
-                    <div class="flex items-center gap-3">
-                      <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0">${icons.street}</div>
-                      <div class="overflow-hidden">
-                        <span class="text-xs font-bold text-slate-500 block">الشارع</span>
-                        <span class="text-[18px] font-black text-slate-900 truncate block">${streetStr}</span>
+                    <div class="flex items-start gap-3">
+                      <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0 mt-0.5">${icons.street}</div>
+                      <div class="flex-1 min-w-0">
+                        <span class="text-xs font-bold text-slate-500 block leading-normal">الشارع</span>
+                        <span class="text-[17px] font-black text-slate-900 block leading-normal pb-1 whitespace-normal">${streetStr}</span>
                       </div>
                     </div>
                   </div>
 
                   ${(!item.isOnBid && item.propertyType === 'أرض' && item.meterPrice) ? `
-                  <div class="pt-2.5 border-t border-[#e8dfc8] flex items-center justify-between text-base font-bold">
+                  <div class="pt-2 border-t border-[#e8dfc8] flex items-center justify-between text-base font-bold leading-normal">
                     <span class="text-slate-600">سعر المتر المربع:</span>
                     <span class="text-[#063b2d] font-black text-lg">${Number(item.meterPrice).toLocaleString()} ر.س / م²</span>
                   </div>
                   ` : (item.otherFeatures ? `
-                  <div class="pt-2.5 border-t border-[#e8dfc8] text-[15px] font-bold text-slate-700 truncate">
+                  <div class="pt-2 border-t border-[#e8dfc8] text-[15px] font-bold text-slate-700 leading-normal pb-0.5 whitespace-normal">
                     <span class="text-[#8a6d2b] font-black">المميزات: </span>${item.otherFeatures}
                   </div>
                   ` : '')}
@@ -930,29 +927,29 @@
 
                 <!-- بطاقة السعر ورقم التواصل -->
                 <div class="bg-[#fdfcf9] border-2 border-[#d4c49e] rounded-[22px] overflow-hidden shadow-sm">
-                  <div class="bg-[#063b2d] px-6 py-3.5 flex items-center justify-between">
+                  <div class="bg-[#063b2d] px-6 py-3 flex items-center justify-between">
                     <div>
-                      <span class="text-xs font-bold text-[#d4c49e] block">السعر المطلوب</span>
-                      <div dir="rtl" class="text-[32px] font-black ${item.isOnBid ? 'text-amber-300' : 'text-white'} leading-tight">${priceText}</div>
+                      <span class="text-xs font-bold text-[#d4c49e] block leading-normal">السعر المطلوب</span>
+                      <div dir="rtl" class="text-[31px] font-black ${item.isOnBid ? 'text-amber-300' : 'text-white'} leading-normal pb-0.5">${priceText}</div>
                     </div>
                     ${(item.rentIncome && item.rentIncome > 0) ? `
                     <div class="bg-[#042a20] border border-[#c59b43]/60 rounded-xl px-4 py-1.5 text-center">
-                      <span class="text-[11px] font-bold text-[#d4c49e] block">الدخل السنوي</span>
-                      <span class="text-lg font-black text-emerald-300">${Number(item.rentIncome).toLocaleString()} ر.س</span>
-                      ${(!item.isOnBid && item.roi > 0) ? `<span class="text-[11px] font-bold text-amber-300 block">عائد ${item.roi}%</span>` : ''}
+                      <span class="text-[11px] font-bold text-[#d4c49e] block leading-normal">الدخل السنوي</span>
+                      <span class="text-lg font-black text-emerald-300 block leading-normal">${Number(item.rentIncome).toLocaleString()} ر.س</span>
+                      ${(!item.isOnBid && item.roi > 0) ? `<span class="text-[11px] font-bold text-amber-300 block leading-normal">عائد ${item.roi}%</span>` : ''}
                     </div>
                     ` : ''}
                   </div>
-                  <div class="py-2.5 px-6 bg-[#fdfcf9] flex items-center justify-center gap-3">
+                  <div class="py-2 px-6 bg-[#fdfcf9] flex items-center justify-center gap-3">
                     ${icons.phone}
-                    <span dir="ltr" class="text-[24px] font-black text-[#063b2d]">${phoneDisplay}</span>
+                    <span dir="ltr" class="text-[24px] font-black text-[#063b2d] leading-normal">${phoneDisplay}</span>
                   </div>
                 </div>
 
               </div>
 
-              <!-- الجانب الأيسر: الصورة أو الكروكي (6 أعمدة) -->
-              <div class="col-span-6 h-full overflow-hidden">
+              <!-- الجانب الأيسر: الصورة أو الكروكي -->
+              <div class="col-span-6 h-full">
                 ${leftVisualHtml}
               </div>
 
@@ -2655,5 +2652,3 @@
   </script>
 </body>
 </html>
-
-```
