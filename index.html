@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -149,8 +148,8 @@
 
     <!-- Filters and Search Bar -->
     <div class="bg-slate-900 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800 shadow-sm mb-6 sm:mb-8 flex flex-col lg:flex-row gap-3 sm:gap-4">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4 flex-1">
-        <div class="relative md:col-span-2 lg:col-span-1">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 flex-1">
+        <div class="relative sm:col-span-2 md:col-span-1">
           <i data-lucide="search" class="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4"></i>
           <input type="text" id="search-input" oninput="applyFilters()" placeholder="بحث..." class="w-full bg-slate-950 border border-slate-700 py-2.5 sm:py-3 pr-9 sm:pr-11 pl-3 sm:pl-4 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:border-emerald-500 outline-none transition" />
         </div>
@@ -165,7 +164,7 @@
           <option value="مكتب تجاري">مكتب تجاري</option>
           <option value="محل تجاري">محل تجاري</option>
         </select>
-        <select id="filter-city" onchange="applyFilters()" class="bg-slate-950 border border-slate-700 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white focus:border-emerald-500 outline-none transition cursor-pointer">
+        <select id="filter-city" onchange="handleCityFilterChange()" class="bg-slate-950 border border-slate-700 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white focus:border-emerald-500 outline-none transition cursor-pointer">
           <option value="الكل">كل المدن</option>
           <option value="الرياض">الرياض</option>
           <option value="جدة">جدة</option>
@@ -173,6 +172,9 @@
           <option value="مكة المكرمة">مكة المكرمة</option>
           <option value="المدينة المنورة">المدينة المنورة</option>
           <option value="الخبر">الخبر</option>
+        </select>
+        <select id="filter-district" onchange="applyFilters()" class="bg-slate-950 border border-slate-700 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white focus:border-emerald-500 outline-none transition cursor-pointer">
+          <option value="الكل">كل الأحياء</option>
         </select>
         <select id="filter-purpose" onchange="applyFilters()" class="bg-slate-950 border border-slate-700 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white focus:border-emerald-500 outline-none transition cursor-pointer">
           <option value="الكل">الكل</option>
@@ -356,6 +358,90 @@
     const IMGBB_API_KEY = '346c3e5151b4da39a9dbfef70089ef54';
 
     // ========================================================
+    // تحديث قائمة الأحياء تلقائياً في شريط الفلاتر
+    // ========================================================
+    function populateDistrictFilter() {
+      const districtSelect = document.getElementById('filter-district');
+      const cityVal = document.getElementById('filter-city')?.value || 'الكل';
+      if (!districtSelect) return;
+
+      const currentSelected = districtSelect.value;
+      const districtsSet = new Set();
+
+      items.forEach(item => {
+        if (cityVal !== 'الكل' && item.city !== cityVal) return;
+
+        // أحياء العروض
+        if (item.district && item.district.trim()) {
+          districtsSet.add(item.district.trim());
+        }
+        // أحياء الطلبات (قد تكون مفصولة بفاصلة عربية أو إنجليزية)
+        if (item.districts && item.districts.trim()) {
+          item.districts.split(/[،,]/).forEach(d => {
+            const cleanD = d.trim();
+            if (cleanD) districtsSet.add(cleanD);
+          });
+        }
+      });
+
+      const sortedDistricts = Array.from(districtsSet).sort((a, b) => a.localeCompare(b, 'ar'));
+
+      districtSelect.innerHTML = `<option value="الكل">كل الأحياء</option>` +
+        sortedDistricts.map(d => `<option value="${d}" ${currentSelected === d ? 'selected' : ''}>حي ${d}</option>`).join('');
+
+      if (currentSelected !== 'الكل' && !districtsSet.has(currentSelected)) {
+        districtSelect.value = 'الكل';
+      }
+    }
+    window.populateDistrictFilter = populateDistrictFilter;
+
+    function handleCityFilterChange() {
+      populateDistrictFilter();
+      applyFilters();
+    }
+    window.handleCityFilterChange = handleCityFilterChange;
+
+    // دالة مساعدة للتحقق من مطابقة الفلاتر الموحدة
+    function matchesCurrentFilters(item) {
+      const searchVal = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+      const typeVal = document.getElementById('filter-type')?.value || 'الكل';
+      const cityVal = document.getElementById('filter-city')?.value || 'الكل';
+      const districtVal = document.getElementById('filter-district')?.value || 'الكل';
+      const purposeVal = document.getElementById('filter-purpose')?.value || 'الكل';
+
+      const matchSearch = !searchVal ||
+                          (item.city || '').toLowerCase().includes(searchVal) || 
+                          (item.district || '').toLowerCase().includes(searchVal) || 
+                          (item.districts || '').toLowerCase().includes(searchVal) || 
+                          (item.id || '').toLowerCase().includes(searchVal);
+
+      const matchType = typeVal === 'الكل' || item.propertyType === typeVal;
+      const matchCity = cityVal === 'الكل' || item.city === cityVal;
+
+      let matchDistrict = true;
+      if (districtVal !== 'الكل') {
+        const itemDist = (item.district || '').trim();
+        const reqDists = (item.districts || '').split(/[،,]/).map(d => d.trim());
+        matchDistrict = (itemDist === districtVal) || reqDists.includes(districtVal);
+      }
+
+      let matchPurpose = true;
+      if (purposeVal !== 'الكل') {
+        if (item.type === 'offer') {
+          const ot = item.offerType || 'بيع';
+          if (purposeVal === 'بيع') matchPurpose = ot.includes('بيع');
+          else if (purposeVal === 'إيجار') matchPurpose = ot.includes('إيجار');
+        } else {
+          const rt = item.requestType || 'شراء';
+          if (purposeVal === 'بيع') matchPurpose = rt.includes('شراء');
+          else if (purposeVal === 'إيجار') matchPurpose = rt.includes('إستئجار') || rt.includes('استئجار');
+        }
+      }
+
+      return matchSearch && matchType && matchCity && matchDistrict && matchPurpose;
+    }
+
+    // ========================================================
     // استخراج الإحداثيات تلقائياً من روابط خرائط جوجل
     // ========================================================
     async function extractCoordsFromGoogleMapsUrl(urlInput) {
@@ -433,7 +519,6 @@
     // الرسم الكروكي الهندسي SVG (اختياري عبر showSketch)
     // ========================================================
     function generatePlotSketchSVG(item, options = {}) {
-      // إذا كان خيار الكروكي مغلقاً في السجل، لا نعرضه إلا في المعاينة الحية عند التفعيل
       if (item.showSketch === false && !options.forcePreview) {
         return '';
       }
@@ -443,7 +528,6 @@
       const dimRaw = (item.dimensions || '').trim();
       const areaText = item.landArea ? `${item.landArea} م²` : '';
 
-      // إذا لم يفعّله المستخدم صراحة ولم يتم إدخال واجهة أو أطوال لا يُعرض تلقائياً
       if (item.showSketch !== true && (!facing || facing === 'غير محدد') && !dimRaw && !options.forcePreview) {
         return '';
       }
@@ -542,7 +626,6 @@
     }
     window.generatePlotSketchSVG = generatePlotSketchSVG;
 
-    // تبديل تفعيل/إلغاء الرسم الكروكي في النموذج
     window.toggleSketchOption = function() {
       const checkbox = document.getElementById('f-show-sketch');
       const wrapper = document.getElementById('live-sketch-wrapper');
@@ -556,7 +639,6 @@
       }
     };
 
-    // تحديث المعاينة الحية للكروكي أثناء تعبئة النموذج
     window.updateLiveSketchPreview = function() {
       const checkbox = document.getElementById('f-show-sketch');
       const previewContainer = document.getElementById('live-sketch-preview');
@@ -575,7 +657,6 @@
       previewContainer.innerHTML = generatePlotSketchSVG(tempItem, { forcePreview: true, compact: true });
     };
 
-    // الدالة المسؤولة عن تبديل خيار "على السوم" أو تحديد السعر
     window.toggleOnBid = function(forceState) {
         const hiddenInput = document.getElementById('f-is-on-bid');
         const btn = document.getElementById('btn-toggle-bid');
@@ -621,7 +702,6 @@
         lucide.createIcons();
     };
 
-    // الدالة المسؤولة عن تبديل حقول المباني وإظهار حقل "سعر المتر" للأراضي
     window.toggleBuildingFields = function() {
         const propSelect = document.getElementById('f-prop');
         if (!propSelect) return;
@@ -645,7 +725,6 @@
         updateLiveSketchPreview();
     };
 
-    // دالة حساب الأسعار المترابطة (المساحة، سعر المتر، السعر الإجمالي)
     window.calculatePriceLogic = function(changedField) {
         const isOnBid = document.getElementById('f-is-on-bid')?.value === 'true';
         if (isOnBid) return;
@@ -681,7 +760,6 @@
         if (typeof calculateROI === 'function') calculateROI();
     };
 
-    // دالة إنشاء الهيكل المشترك لقالب الكرت مع مراعاة خيار الكروكي
     function buildFlyerDOM(item, flyerElement) {
         const priceText = item.isOnBid ? 'على السوم' : (item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'السعر حسب الطلب');
         let offerTypeTitle = 'عرض عقاري';
@@ -860,10 +938,6 @@
     }
 
     async function downloadAllFlyers() {
-        const searchVal = document.getElementById('search-input').value.toLowerCase();
-        const typeVal = document.getElementById('filter-type').value;
-        const cityVal = document.getElementById('filter-city').value;
-
         const filteredOffers = items.filter(item => {
             if (item.type !== 'offer') return false;
             
@@ -873,13 +947,7 @@
             if (activeTab === 'my_ads') matchTab = item.isMine;
             if (activeTab === 'requests' || activeTab === 'matches') return false; 
 
-            const matchSearch = (item.city || '').toLowerCase().includes(searchVal) || 
-                                (item.district || '').toLowerCase().includes(searchVal) || 
-                                (item.id || '').toLowerCase().includes(searchVal);
-            const matchType = typeVal === 'الكل' || item.propertyType === typeVal;
-            const matchCity = cityVal === 'الكل' || item.city === cityVal;
-            
-            return matchTab && matchSearch && matchType && matchCity;
+            return matchTab && matchesCurrentFilters(item);
         });
 
         if (filteredOffers.length === 0) {
@@ -1257,6 +1325,7 @@
 
         items = dataList.reverse();
         isInitialLoad = false;
+        populateDistrictFilter();
         updateStats();
         renderUI();
       }, (err) => console.error("Firestore error:", err));
@@ -1395,24 +1464,16 @@
     function renderUI() {
       if (!window.isAuthenticated) return;
       const container = document.getElementById('content-container');
-      const searchVal = document.getElementById('search-input').value.toLowerCase();
-      const typeVal = document.getElementById('filter-type').value;
-      const cityVal = document.getElementById('filter-city').value;
 
       const filtered = items.filter(item => {
-        if (activeTab === 'matches') return getMatches(item).length > 0;
+        if (activeTab === 'matches') return getMatches(item).length > 0 && matchesCurrentFilters(item);
         let matchTab = true;
         if (activeTab === 'offers') matchTab = item.type === 'offer';
         if (activeTab === 'requests') matchTab = item.type === 'request';
         if (activeTab === 'favorites') matchTab = item.isFavorite;
         if (activeTab === 'my_ads') matchTab = item.isMine;
 
-        const matchSearch = (item.city || '').toLowerCase().includes(searchVal) || 
-                            (item.district || '').toLowerCase().includes(searchVal) || 
-                            (item.id || '').toLowerCase().includes(searchVal);
-        const matchType = typeVal === 'الكل' || item.propertyType === typeVal;
-        const matchCity = cityVal === 'الكل' || item.city === cityVal;
-        return matchTab && matchSearch && matchType && matchCity;
+        return matchTab && matchesCurrentFilters(item);
       });
 
       if (viewMode === 'map') {
@@ -2212,8 +2273,8 @@
         if(bOffer) bOffer.className = "flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition bg-slate-950 text-slate-400 border border-slate-800";
         fields.innerHTML = `
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">نوع الطلب</label><select id="f-req-type" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white"><option value="شراء">شراء</option><option value="إستئجار">إستئجار</option></select></div>
-            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">صفة الطلب</label><select id="f-req-role" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white"><option value="أنا مشتري">أنا مشتري</option><option value="وسيط">وسيط</option></select></div>
+            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">نوع الطلب</label><select id="f-req-type" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white"><option value="شراء" ${data.requestType==='شراء'?'selected':''}>شراء</option><option value="إستئجار" ${data.requestType==='إستئجار'?'selected':''}>إستئجار</option></select></div>
+            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">صفة الطلب</label><select id="f-req-role" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white"><option value="أنا مشتري" ${data.requestRole==='أنا مشتري'?'selected':''}>أنا مشتري</option><option value="وسيط" ${data.requestRole==='وسيط'?'selected':''}>وسيط</option></select></div>
             <div>
               <label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">نوع العقار</label>
               <select id="f-prop" onchange="toggleBuildingFields()" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white cursor-pointer" required>
@@ -2236,8 +2297,8 @@
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">المساحة الدنيا (م²)</label><input type="number" id="f-area-min" value="${data.areaMin || ''}" placeholder="400" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
             
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الأطوال المطلوبة</label><input type="text" id="f-dim" value="${data.dimensions || ''}" placeholder="20 في 20" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
-            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">موعد الاحتياج</label><select id="f-urgency" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white"><option value="عاجل">عاجل</option><option value="خلال شهر">خلال شهر</option><option value="غير مستعجل">غير مستعجل</option></select></div>
-            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">طريقة الدفع</label><select id="f-payment" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white"><option value="نقداً">نقداً</option><option value="تمويل بنكي">تمويل بنكي</option></select></div>
+            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">موعد الاحتياج</label><select id="f-urgency" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white"><option value="عاجل" ${data.urgency==='عاجل'?'selected':''}>عاجل</option><option value="خلال شهر" ${data.urgency==='خلال شهر'?'selected':''}>خلال شهر</option><option value="غير مستعجل" ${data.urgency==='غير مستعجل'?'selected':''}>غير مستعجل</option></select></div>
+            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">طريقة الدفع</label><select id="f-payment" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white"><option value="نقداً" ${data.paymentMethod==='نقداً'?'selected':''}>نقداً</option><option value="تمويل بنكي" ${data.paymentMethod==='تمويل بنكي'?'selected':''}>تمويل بنكي</option></select></div>
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الغرض</label><input type="text" id="f-purpose" value="${data.requestPurpose || 'السكن'}" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
           </div>
           <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1 mt-4">تفاصيل إضافية</label><textarea id="f-details" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white h-20">${data.details || ''}</textarea></div>
@@ -2541,5 +2602,3 @@
   </script>
 </body>
 </html>
-
-```
