@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -238,7 +239,7 @@
   </div>
 
   <!-- قالب الكرت التسويقي -->
-  <div id="flyer-template" class="fixed -left-[9999px] top-0 w-[1280px] h-[720px] bg-white text-slate-900 flex flex-col overflow-hidden z-[-50]" dir="rtl" style="font-family: 'Cairo', sans-serif; letter-spacing: 0px;"></div>
+  <div id="flyer-template" class="fixed -left-[9999px] top-0 w-[1280px] h-[720px] bg-[#faf8f5] text-slate-900 flex flex-col overflow-hidden z-[-50]" dir="rtl" style="font-family: 'Cairo', sans-serif; letter-spacing: 0px;"></div>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -371,11 +372,9 @@
       items.forEach(item => {
         if (cityVal !== 'الكل' && item.city !== cityVal) return;
 
-        // أحياء العروض
         if (item.district && item.district.trim()) {
           districtsSet.add(item.district.trim());
         }
-        // أحياء الطلبات (قد تكون مفصولة بفاصلة عربية أو إنجليزية)
         if (item.districts && item.districts.trim()) {
           item.districts.split(/[،,]/).forEach(d => {
             const cleanD = d.trim();
@@ -401,7 +400,6 @@
     }
     window.handleCityFilterChange = handleCityFilterChange;
 
-    // دالة مساعدة للتحقق من مطابقة الفلاتر الموحدة
     function matchesCurrentFilters(item) {
       const searchVal = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
       const typeVal = document.getElementById('filter-type')?.value || 'الكل';
@@ -760,149 +758,204 @@
         if (typeof calculateROI === 'function') calculateROI();
     };
 
+    // ========================================================
+    // التصميم المعماري الفاتح والمشرق للكرت التسويقي (1280x720)
+    // ========================================================
     function buildFlyerDOM(item, flyerElement) {
         const priceText = item.isOnBid ? 'على السوم' : (item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'السعر حسب الطلب');
         let offerTypeTitle = 'عرض عقاري';
-        if(item.offerType === 'بيع') offerTypeTitle = 'للبيع';
+        if (item.offerType === 'بيع') offerTypeTitle = 'للبيع';
         else if (item.offerType === 'إيجار') offerTypeTitle = 'للإيجار';
-        
-        let streetStr = item.street || '';
-        if (item.facing && item.facing !== 'غير محدد') {
-            streetStr = `واجهة ${item.facing}` + (streetStr ? ` - ${streetStr}` : '');
+        else if (item.offerType) offerTypeTitle = item.offerType;
+
+        let streetStr = '';
+        if (item.streetCount && item.streetCount !== 'شارع واحد') {
+            streetStr += `${item.streetCount}`;
+        }
+        if (item.streetWidths && item.streetWidths.length > 0) {
+            streetStr += (streetStr ? ' - ' : '') + 'عرض ' + item.streetWidths.join('م / ') + 'م';
+        }
+        if (item.street) {
+            streetStr += (streetStr ? ` (${item.street})` : item.street);
         }
         if (!streetStr) streetStr = 'غير محدد';
-        if(item.streetCount && item.streetCount !== 'شارع واحد') {
-            streetStr += ` (${item.streetCount})`;
-        }
-        if(item.streetWidths && item.streetWidths.length > 0) {
-           streetStr += ' - ' + item.streetWidths.join('م/') + 'م';
-        }
 
-        let incomeHtml = '';
-        if (item.rentIncome && item.rentIncome > 0) {
-            incomeHtml = `
-              <div class="bg-emerald-50 rounded-2xl py-3 px-4 text-center border border-emerald-200 shadow-sm mt-3">
-                <span class="text-emerald-800 text-base font-bold block mb-0.5" style="letter-spacing: 0;">الدخل الإيجاري السنوي</span>
-                <div class="text-[28px] font-black text-emerald-600" style="letter-spacing: 0;">${Number(item.rentIncome).toLocaleString()} ر.س</div>
-                ${!item.isOnBid && item.roi && item.roi > 0 ? `<div class="text-emerald-700 font-bold text-sm mt-0.5" style="letter-spacing: 0;">عائد استثماري ${item.roi}%</div>` : ''}
-              </div>
-            `;
-        }
+        const facingText = (item.facing && item.facing !== 'غير محدد') ? item.facing : 'غير محدد';
+        const phoneDisplay = item.phone || '0537000090';
+
+        // أيقونات هندسية نظيفة بنمط التصميم المعماري
+        const icons = {
+          area: `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>`,
+          facing: `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`,
+          street: `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19L8 5"/><path d="M16 5l4 14"/><path d="M12 6v2"/><path d="M12 11v2"/><path d="M12 16v2"/></svg>`,
+          rooms: `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>`,
+          dim: `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#064e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M9 5v14"/></svg>`,
+          phone: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c59b43" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`
+        };
 
         const propertyImage = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : (item.imageUrl || '');
-        const sketchSvg = generatePlotSketchSVG(item, { compact: true });
+        const sketchSvg = generatePlotSketchSVG(item, { compact: false });
 
-        let visualBlockHtml = '';
+        let leftVisualHtml = '';
         if (propertyImage && sketchSvg) {
-            visualBlockHtml = `
-              <div class="flex-1 my-4 grid grid-cols-2 gap-3 min-h-[160px]">
-                <div class="rounded-2xl overflow-hidden shadow-sm border border-slate-200 relative bg-slate-100">
-                  <img src="${propertyImage}" class="absolute inset-0 w-full h-full object-cover" crossorigin="anonymous" />
+            leftVisualHtml = `
+              <div class="w-full h-full flex flex-col gap-3">
+                <div class="h-[56%] rounded-[22px] overflow-hidden border-2 border-[#b59449]/60 shadow-md relative bg-white">
+                  <img src="${propertyImage}" class="w-full h-full object-cover" crossorigin="anonymous" />
                 </div>
-                <div class="rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white flex items-center justify-center p-1">
+                <div class="h-[44%] rounded-[22px] overflow-hidden border-2 border-[#b59449]/60 shadow-sm bg-white flex items-center justify-center p-2">
                   ${sketchSvg}
                 </div>
               </div>
             `;
         } else if (propertyImage) {
-            visualBlockHtml = `
-              <div class="flex-1 my-5 rounded-3xl overflow-hidden shadow-md border-2 border-slate-200 relative bg-slate-100 w-full min-h-[150px]">
-                 <img src="${propertyImage}" class="absolute inset-0 w-full h-full object-cover" crossorigin="anonymous" />
+            leftVisualHtml = `
+              <div class="w-full h-full rounded-[26px] overflow-hidden border-2 border-[#b59449]/70 shadow-lg relative bg-white">
+                <img src="${propertyImage}" class="w-full h-full object-cover" crossorigin="anonymous" />
+                ${item.status === 'مباع' ? `<div class="absolute top-4 right-4 bg-rose-600 text-white font-black px-5 py-1.5 rounded-full text-lg shadow-md">تم البيع</div>` : ''}
               </div>
             `;
         } else if (sketchSvg) {
-            visualBlockHtml = `
-              <div class="flex-1 my-4 rounded-3xl overflow-hidden shadow-sm border border-slate-200 bg-white flex items-center justify-center p-2 w-full">
-                 ${sketchSvg}
+            leftVisualHtml = `
+              <div class="w-full h-full rounded-[26px] overflow-hidden border-2 border-[#b59449]/70 shadow-md bg-white flex items-center justify-center p-4">
+                ${sketchSvg}
               </div>
             `;
         } else {
-            visualBlockHtml = `<div class="flex-1 my-5 w-full"></div>`;
+            leftVisualHtml = `
+              <div class="w-full h-full rounded-[26px] border-2 border-[#b59449]/50 bg-[#f3efe6] flex flex-col items-center justify-center p-6 text-center shadow-inner">
+                <img src="https://i.ibb.co/zVftH2s1/image.jpg" class="w-28 h-28 rounded-3xl object-cover border-2 border-[#b59449] shadow-md mb-4" crossorigin="anonymous" />
+                <div class="text-2xl font-black text-[#063b2d]">منصة عبدالله آل يحيى العقارية</div>
+                <div class="text-base font-bold text-[#8a6d2b] mt-1">عروض عقارية حصرية وموثوقة</div>
+              </div>
+            `;
         }
 
-        flyerElement.innerHTML = `
-          <div class="relative w-full h-full bg-slate-50 text-slate-900 flex p-8 gap-8 box-border" style="background-color: #f8fafc; font-family: 'Cairo', sans-serif; direction: rtl; letter-spacing: 0px;">
-            <div class="absolute top-0 right-0 bottom-0 w-5 bg-emerald-600"></div>
-            
-            <div class="w-[44%] flex flex-col justify-between pr-4 border-l-2 border-slate-200 pl-6 py-2">
+        // الصف الرابع في بطاقة المواصفات يتكيف حسب نوع العقار (أرض أم مبنى)
+        const fourthSpecHtml = item.propertyType === 'أرض'
+          ? `
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0">${icons.dim}</div>
               <div>
-                <span class="inline-block px-3 py-1 rounded-full bg-slate-200 text-slate-600 font-bold text-base mb-3 shadow-sm border border-slate-300" style="letter-spacing: 0;">رقم المرجع: ${item.id}</span>
-                <h2 class="text-[40px] font-black text-slate-900 leading-tight mb-2" style="letter-spacing: 0;">
-                  ${item.propertyType} ${offerTypeTitle}
-                </h2>
-                <p class="text-[22px] font-bold text-slate-500" style="letter-spacing: 0;">${item.city} ${item.district ? ' - حي ' + item.district : ''}</p>
+                <span class="text-xs font-bold text-slate-500 block">الأطوال</span>
+                <span dir="ltr" class="text-[20px] font-black text-slate-900">${item.dimensions || 'غير محدد'}</span>
               </div>
+            </div>
+          `
+          : `
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0">${icons.rooms}</div>
+              <div>
+                <span class="text-xs font-bold text-slate-500 block">التفاصيل</span>
+                <span class="text-[20px] font-black text-slate-900">${item.rooms || '-'} غرف • ${item.bathrooms || '-'} حمامات</span>
+              </div>
+            </div>
+          `;
 
-              ${visualBlockHtml}
-
-              <div class="space-y-4 mt-auto">
-                <div class="bg-white rounded-2xl py-4 px-5 text-center border border-slate-200 shadow-sm">
-                  <span class="text-slate-600 text-lg font-bold block mb-1" style="letter-spacing: 0;">السعر المطلوب</span>
-                  <div dir="rtl" style="letter-spacing: 0px !important; font-family: 'Cairo', sans-serif;" class="text-[36px] font-black ${item.isOnBid ? 'text-amber-600' : 'text-slate-900'}">${priceText}</div>
-                </div>
-                ${incomeHtml}
+        flyerElement.innerHTML = `
+          <div class="w-full h-full bg-[#faf8f5] text-slate-900 flex flex-col box-border" style="font-family: 'Cairo', sans-serif; direction: rtl; letter-spacing: 0px;">
+            
+            <!-- الشريط العلوي الأخضر الغامق مع الخط الذهبي -->
+            <div class="h-[88px] bg-[#063b2d] border-b-[4px] border-[#c59b43] px-9 flex items-center justify-between shrink-0 shadow-md">
+              <div class="flex items-center gap-3.5">
+                <img src="https://i.ibb.co/zVftH2s1/image.jpg" class="w-12 h-12 rounded-xl object-cover border border-[#c59b43]" crossorigin="anonymous" />
+                <span class="text-[28px] font-black text-white">منصة عبدالله آل يحيى العقارية</span>
+              </div>
+              
+              <div class="px-5 py-2 rounded-xl border-2 border-[#c59b43] bg-[#042a20] text-[#f5e7c1] font-black text-[20px] flex items-center gap-3 shadow-sm">
+                <span>${offerTypeTitle}</span>
+                <span class="text-[#c59b43]">|</span>
+                <span dir="ltr">${item.id}</span>
               </div>
             </div>
 
-            <div class="w-[56%] flex flex-col justify-between py-2">
-              <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-[20px] font-bold text-slate-700 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                <div class="flex flex-col border-b border-slate-100 pb-2">
-                  <span class="text-slate-400 text-base">المساحة</span>
-                  <span class="text-slate-900 text-[22px]">${item.landArea || '-'} م²</span>
-                </div>
+            <!-- جسم البطاقة الرئيسي -->
+            <div class="flex-1 p-7 grid grid-cols-12 gap-7 overflow-hidden">
+              
+              <!-- الجانب الأيمن: الموقع + المواصفات + السعر والتواصل (6 أعمدة) -->
+              <div class="col-span-6 flex flex-col justify-between gap-4">
                 
-                ${!item.isOnBid && item.propertyType === 'أرض' && item.meterPrice ? `
-                <div class="flex flex-col border-b border-slate-100 pb-2">
-                  <span class="text-slate-400 text-base">سعر المتر</span>
-                  <span class="text-emerald-600 font-bold text-[22px]">${Number(item.meterPrice).toLocaleString()} ر.س</span>
+                <!-- بطاقة العنوان والموقع -->
+                <div class="bg-[#fdfcf9] border-2 border-[#d4c49e] rounded-[22px] px-6 py-4 shadow-sm flex flex-col justify-center">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-sm font-black text-[#8a6d2b] bg-[#f3ebd7] px-3 py-0.5 rounded-lg">${item.propertyType} ${offerTypeTitle}</span>
+                    <span class="text-sm font-bold ${item.status === 'مباع' ? 'text-rose-600' : 'text-emerald-700'}">${item.status || 'متاح'} • ${item.isNegotiable !== 'لا' ? 'قابل للتفاوض' : 'سعر نهائي'}</span>
+                  </div>
+                  <h2 class="text-[34px] font-black text-[#063b2d] leading-snug truncate">
+                    ${item.city}${item.district ? ' - حي ' + item.district : ''}
+                  </h2>
                 </div>
-                ` : ''}
 
-                ${item.propertyType !== 'أرض' ? `
-                <div class="flex flex-col border-b border-slate-100 pb-2">
-                  <span class="text-slate-400 text-base">الغرف / دورات المياه</span>
-                  <span class="text-slate-900 text-[22px]">${item.rooms || '-'} غرف | ${item.bathrooms || '-'} حمامات</span>
+                <!-- بطاقة المواصفات بالأيقونات -->
+                <div class="bg-[#fdfcf9] border-2 border-[#d4c49e] rounded-[22px] p-5 shadow-sm flex-1 flex flex-col justify-center gap-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0">${icons.area}</div>
+                      <div>
+                        <span class="text-xs font-bold text-slate-500 block">المساحة</span>
+                        <span class="text-[20px] font-black text-slate-900">${item.landArea || '-'} م²</span>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                      <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0">${icons.facing}</div>
+                      <div>
+                        <span class="text-xs font-bold text-slate-500 block">الواجهة</span>
+                        <span class="text-[19px] font-black text-slate-900">${facingText}</span>
+                      </div>
+                    </div>
+
+                    ${fourthSpecHtml}
+
+                    <div class="flex items-center gap-3">
+                      <div class="w-11 h-11 rounded-xl bg-[#063b2d]/10 flex items-center justify-center shrink-0">${icons.street}</div>
+                      <div class="overflow-hidden">
+                        <span class="text-xs font-bold text-slate-500 block">الشارع</span>
+                        <span class="text-[18px] font-black text-slate-900 truncate block">${streetStr}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  ${(!item.isOnBid && item.propertyType === 'أرض' && item.meterPrice) ? `
+                  <div class="pt-2.5 border-t border-[#e8dfc8] flex items-center justify-between text-base font-bold">
+                    <span class="text-slate-600">سعر المتر المربع:</span>
+                    <span class="text-[#063b2d] font-black text-lg">${Number(item.meterPrice).toLocaleString()} ر.س / م²</span>
+                  </div>
+                  ` : (item.otherFeatures ? `
+                  <div class="pt-2.5 border-t border-[#e8dfc8] text-[15px] font-bold text-slate-700 truncate">
+                    <span class="text-[#8a6d2b] font-black">المميزات: </span>${item.otherFeatures}
+                  </div>
+                  ` : '')}
                 </div>
-                ` : `
-                <div class="flex flex-col border-b border-slate-100 pb-2">
-                  <span class="text-slate-400 text-base">الأطوال</span>
-                  <span dir="ltr" class="text-slate-900 text-[22px] text-right">${item.dimensions || '-'}</span>
+
+                <!-- بطاقة السعر ورقم التواصل -->
+                <div class="bg-[#fdfcf9] border-2 border-[#d4c49e] rounded-[22px] overflow-hidden shadow-sm">
+                  <div class="bg-[#063b2d] px-6 py-3.5 flex items-center justify-between">
+                    <div>
+                      <span class="text-xs font-bold text-[#d4c49e] block">السعر المطلوب</span>
+                      <div dir="rtl" class="text-[32px] font-black ${item.isOnBid ? 'text-amber-300' : 'text-white'} leading-tight">${priceText}</div>
+                    </div>
+                    ${(item.rentIncome && item.rentIncome > 0) ? `
+                    <div class="bg-[#042a20] border border-[#c59b43]/60 rounded-xl px-4 py-1.5 text-center">
+                      <span class="text-[11px] font-bold text-[#d4c49e] block">الدخل السنوي</span>
+                      <span class="text-lg font-black text-emerald-300">${Number(item.rentIncome).toLocaleString()} ر.س</span>
+                      ${(!item.isOnBid && item.roi > 0) ? `<span class="text-[11px] font-bold text-amber-300 block">عائد ${item.roi}%</span>` : ''}
+                    </div>
+                    ` : ''}
+                  </div>
+                  <div class="py-2.5 px-6 bg-[#fdfcf9] flex items-center justify-center gap-3">
+                    ${icons.phone}
+                    <span dir="ltr" class="text-[24px] font-black text-[#063b2d]">${phoneDisplay}</span>
+                  </div>
                 </div>
-                `}
-                <div class="flex flex-col border-b border-slate-100 pb-2 col-span-2">
-                  <span class="text-slate-400 text-base">الواجهة والشوارع</span>
-                  <span class="text-slate-900 text-[21px] leading-relaxed text-right">${streetStr}</span>
-                </div>
-                ${item.propertyType !== 'أرض' ? `
-                <div class="flex flex-col border-b border-slate-100 pb-2">
-                  <span class="text-slate-400 text-base">عمر العقار</span>
-                  <span class="text-slate-900 text-[22px]">${item.propertyAge || '-'}</span>
-                </div>
-                <div class="flex flex-col border-b border-slate-100 pb-2">
-                  <span class="text-slate-400 text-base">الأطوال</span>
-                  <span dir="ltr" class="text-slate-900 text-[22px] text-right">${item.dimensions || '-'}</span>
-                </div>
-                ` : ''}
-                <div class="flex flex-col pb-1">
-                  <span class="text-slate-400 text-base">حالة العقار</span>
-                  <span class="text-[22px] ${item.status === 'مباع' ? 'text-rose-600' : 'text-emerald-600'}">${item.status || 'متاح'}</span>
-                </div>
-                <div class="flex flex-col pb-1">
-                  <span class="text-slate-400 text-base">قابلية التفاوض</span>
-                  <span class="text-slate-900 text-[22px]">${item.isNegotiable !== 'لا' ? 'قابل للتفاوض' : 'غير قابل'}</span>
-                </div>
+
               </div>
 
-              ${item.otherFeatures ? `
-              <div class="bg-slate-100 rounded-2xl p-4 text-[18px] font-bold text-slate-700 shadow-inner flex items-start gap-3 mt-2">
-                <span class="bg-slate-300 px-2.5 py-1 rounded-lg text-base shrink-0">مميزات</span>
-                <span class="leading-relaxed line-clamp-2">${item.otherFeatures}</span>
+              <!-- الجانب الأيسر: الصورة أو الكروكي (6 أعمدة) -->
+              <div class="col-span-6 h-full overflow-hidden">
+                ${leftVisualHtml}
               </div>
-              ` : ''}
 
-              <div class="pt-2 text-left text-slate-400 font-bold text-lg flex items-center justify-end gap-2">
-                منصة عبدالله آل يحيى العقارية
-              </div>
             </div>
           </div>
         `;
@@ -918,7 +971,7 @@
                     html2canvas(flyer, {
                         scale: 1.5, 
                         useCORS: true, 
-                        backgroundColor: '#f8fafc',
+                        backgroundColor: '#faf8f5',
                         onclone: (clonedDoc) => {
                             const clonedFlyer = clonedDoc.getElementById('flyer-template');
                             if (clonedFlyer) {
@@ -994,7 +1047,7 @@
         return;
       }
 
-      showToast('جاري تصميم صورة حالة الواتساب (أفقية)...');
+      showToast('جاري تصميم صورة حالة الواتساب (التصميم المعماري)...');
 
       const flyer = document.getElementById('flyer-template');
       buildFlyerDOM(item, flyer);
@@ -1004,7 +1057,7 @@
           html2canvas(flyer, {
             scale: 1.5, 
             useCORS: true, 
-            backgroundColor: '#f8fafc',
+            backgroundColor: '#faf8f5',
             onclone: (clonedDoc) => {
               const clonedFlyer = clonedDoc.getElementById('flyer-template');
               if (clonedFlyer) {
@@ -1016,7 +1069,7 @@
             link.download = `حالة_واتساب_${item.id}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
-            showToast('تم تصميم صورة الحالة (بالعرض) وتحميلها بنجاح!');
+            showToast('تم تصميم صورة الحالة وتحميلها بنجاح!');
           }).catch(err => {
             console.error(err);
             showToast('فشل إنشاء الصورة، يرجى المحاولة لاحقاً');
@@ -2602,3 +2655,5 @@
   </script>
 </body>
 </html>
+
+```
