@@ -156,6 +156,7 @@
         <select id="filter-type" onchange="applyFilters()" class="bg-slate-950 border border-slate-700 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white focus:border-emerald-500 outline-none transition cursor-pointer">
           <option value="الكل">كل الأنواع</option>
           <option value="فيلا">فيلا</option>
+          <option value="برج">برج</option>
           <option value="شقة">شقة</option>
           <option value="عمارة">عمارة</option>
           <option value="أرض">أرض</option>
@@ -339,7 +340,7 @@
     let pickerMarker = null;
     let mainMapInstance = null;
 
-    const PROPERTY_TYPES = ["فيلا", "شقة", "عمارة", "أرض", "دور", "استراحة", "مكتب تجاري", "محل تجاري"];
+    const PROPERTY_TYPES = ["فيلا", "برج", "شقة", "عمارة", "أرض", "دور", "استراحة", "مكتب تجاري", "محل تجاري"];
     const CITIES_LIST = ["الرياض", "جدة", "الدمام", "مكة المكرمة", "المدينة المنورة", "الخبر"];
     const FACING_OPTIONS = [
       "غير محدد",
