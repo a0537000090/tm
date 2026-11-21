@@ -359,6 +359,50 @@
     const IMGBB_API_KEY = '346c3e5151b4da39a9dbfef70089ef54';
 
     // ========================================================
+    // دوال تنظيف وتنسيق الأرقام الكبيرة (الملايين والمليارات)
+    // ========================================================
+    function cleanNumber(val) {
+      if (val === null || val === undefined || val === '') return '';
+      const normalized = String(val)
+        .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+        .replace(/[٬,،\s]/g, '')
+        .trim();
+      const num = parseFloat(normalized);
+      return isNaN(num) ? '' : String(num);
+    }
+    window.cleanNumber = cleanNumber;
+
+    function formatNumberInput(inputEl) {
+      if (!inputEl) return;
+      let raw = String(inputEl.value)
+        .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+        .replace(/[^0-9.]/g, '');
+
+      const parts = raw.split('.');
+      if (parts.length > 2) {
+        raw = parts[0] + '.' + parts.slice(1).join('');
+      }
+
+      if (raw === '') {
+        inputEl.value = '';
+        return;
+      }
+
+      const [intPart, decPart] = raw.split('.');
+      const formattedInt = intPart ? Number(intPart).toLocaleString('en-US') : '';
+      inputEl.value = decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
+    }
+    window.formatNumberInput = formatNumberInput;
+
+    function formatInitialNumber(val) {
+      const cleaned = cleanNumber(val);
+      if (!cleaned) return '';
+      const [intPart, decPart] = cleaned.split('.');
+      const formattedInt = intPart ? Number(intPart).toLocaleString('en-US') : '';
+      return decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
+    }
+
+    // ========================================================
     // تحديث قائمة الأحياء تلقائياً في شريط الفلاتر
     // ========================================================
     function populateDistrictFilter() {
@@ -648,7 +692,7 @@
         propertyType: document.getElementById('f-prop')?.value || 'أرض',
         facing: document.getElementById('f-facing')?.value || 'غير محدد',
         dimensions: document.getElementById('f-dim')?.value || '',
-        landArea: document.getElementById('f-area')?.value || '',
+        landArea: cleanNumber(document.getElementById('f-area')?.value || ''),
         streetWidths: Array.from(widthInputs).map(i => i.value).filter(v => v.trim() !== '')
       };
 
@@ -686,11 +730,11 @@
             btn.innerHTML = `<i data-lucide="gavel" class="w-3 h-3"></i><span>على السوم</span>`;
             
             priceInput.disabled = false;
-            priceInput.placeholder = '1850000';
+            priceInput.placeholder = '220,000,000';
             
             if (meterPriceInput) {
                 meterPriceInput.disabled = false;
-                meterPriceInput.placeholder = '5000';
+                meterPriceInput.placeholder = '5,000';
             }
             if (typeof forceState !== 'boolean') {
                 priceInput.focus();
@@ -732,26 +776,30 @@
         const meterPriceInput = document.getElementById('f-meter-price');
         
         if(!areaInput || !priceInput || !meterPriceInput) return;
+
+        if (changedField === 'area') formatNumberInput(areaInput);
+        if (changedField === 'meter') formatNumberInput(meterPriceInput);
+        if (changedField === 'total') formatNumberInput(priceInput);
         
-        const area = parseFloat(areaInput.value);
-        const mp = parseFloat(meterPriceInput.value);
-        const tp = parseFloat(priceInput.value);
+        const area = parseFloat(cleanNumber(areaInput.value));
+        const mp = parseFloat(cleanNumber(meterPriceInput.value));
+        const tp = parseFloat(cleanNumber(priceInput.value));
 
         if (changedField === 'meter') {
             if (area > 0 && !isNaN(mp)) {
-                priceInput.value = Math.round(mp * area);
+                priceInput.value = Math.round(mp * area).toLocaleString('en-US');
             }
         } 
         else if (changedField === 'total') {
             if (area > 0 && !isNaN(tp)) {
-                meterPriceInput.value = +(tp / area).toFixed(2);
+                meterPriceInput.value = (+(tp / area).toFixed(2)).toLocaleString('en-US');
             }
         }
         else if (changedField === 'area') {
             if (area > 0 && !isNaN(tp)) {
-                meterPriceInput.value = +(tp / area).toFixed(2);
+                meterPriceInput.value = (+(tp / area).toFixed(2)).toLocaleString('en-US');
             } else if (area > 0 && !isNaN(mp) && isNaN(tp)) {
-                priceInput.value = Math.round(mp * area);
+                priceInput.value = Math.round(mp * area).toLocaleString('en-US');
             }
         }
         
@@ -931,7 +979,7 @@
                   <div class="bg-[#063b2d] px-6 py-3 flex items-center justify-between">
                     <div>
                       <span class="text-xs font-bold text-[#d4c49e] block leading-normal">السعر المطلوب</span>
-                      <div dir="rtl" class="text-[31px] font-black ${item.isOnBid ? 'text-amber-300' : 'text-white'} leading-normal pb-0.5">${priceText}</div>
+                      <div dir="rtl" class="text-[28px] font-black ${item.isOnBid ? 'text-amber-300' : 'text-white'} leading-normal pb-0.5">${priceText}</div>
                     </div>
                     ${(item.rentIncome && item.rentIncome > 0) ? `
                     <div class="bg-[#042a20] border border-[#c59b43]/60 rounded-xl px-4 py-1.5 text-center">
@@ -1431,9 +1479,9 @@
     function updateStats() {
       const offers = items.filter(i => i.type === 'offer');
       const requests = items.filter(i => i.type === 'request');
-      const offersWithPrice = offers.filter(i => !i.isOnBid && i.price && !isNaN(parseFloat(i.price)));
+      const offersWithPrice = offers.filter(i => !i.isOnBid && i.price && !isNaN(parseFloat(cleanNumber(i.price))));
       
-      const totalVal = offersWithPrice.reduce((sum, curr) => sum + parseFloat(curr.price), 0);
+      const totalVal = offersWithPrice.reduce((sum, curr) => sum + parseFloat(cleanNumber(curr.price)), 0);
       const roiItems = offers.filter(i => !i.isOnBid && i.roi > 0);
       const avgRoi = roiItems.length > 0 ? (roiItems.reduce((s, c) => s + parseFloat(c.roi), 0) / roiItems.length).toFixed(1) : 0;
 
@@ -2029,8 +2077,11 @@
         return;
       }
 
-      const p = parseFloat(document.getElementById('f-price')?.value || 0);
-      const r = parseFloat(document.getElementById('f-rent')?.value || 0);
+      const rentInput = document.getElementById('f-rent');
+      if (rentInput) formatNumberInput(rentInput);
+
+      const p = parseFloat(cleanNumber(document.getElementById('f-price')?.value || '0'));
+      const r = parseFloat(cleanNumber(rentInput?.value || '0'));
       if (p > 0 && r > 0) {
         const roiVal = ((r / p) * 100).toFixed(2);
         if(roiBox) {
@@ -2140,7 +2191,7 @@
         let val = oldValues[i] || '';
         html += `
           <div class="relative flex items-center">
-            <input type="number" value="${val}" oninput="updateLiveSketchPreview()" placeholder="عرض الشارع ${i+1}" class="f-street-width-input w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 pl-8 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white outline-none focus:border-emerald-500" />
+            <input type="text" inputmode="decimal" value="${val}" oninput="updateLiveSketchPreview()" placeholder="عرض الشارع ${i+1}" class="f-street-width-input w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 pl-8 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white outline-none focus:border-emerald-500" />
             <span class="absolute left-3 text-slate-400 font-bold text-xs sm:text-sm">م</span>
           </div>
         `;
@@ -2228,8 +2279,8 @@
               <div id="street-widths-container" class="grid grid-cols-2 gap-2"></div>
             </div>
             
-            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">مساحة الأرض (م²)</label><input type="number" id="f-area" value="${data.landArea || ''}" oninput="calculatePriceLogic('area'); updateLiveSketchPreview();" placeholder="450" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
-            <div class="land-field" style="display:none;"><label class="block text-[11px] sm:text-xs font-bold text-emerald-400 mb-1">سعر المتر (ر.س)</label><input type="number" id="f-meter-price" value="${isBid ? '' : (data.meterPrice || '')}" oninput="calculatePriceLogic('meter')" placeholder="${isBid ? 'على السوم' : '5000'}" ${isBid ? 'disabled' : ''} class="w-full bg-emerald-950/20 border border-emerald-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-emerald-400 disabled:opacity-60 disabled:border-amber-500/50 disabled:text-amber-400 disabled:placeholder-amber-400 disabled:cursor-not-allowed" /></div>
+            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">مساحة الأرض (م²)</label><input type="text" inputmode="decimal" id="f-area" value="${formatInitialNumber(data.landArea)}" oninput="calculatePriceLogic('area'); updateLiveSketchPreview();" placeholder="450" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white font-mono" /></div>
+            <div class="land-field" style="display:none;"><label class="block text-[11px] sm:text-xs font-bold text-emerald-400 mb-1">سعر المتر (ر.س)</label><input type="text" inputmode="decimal" id="f-meter-price" value="${isBid ? '' : formatInitialNumber(data.meterPrice)}" oninput="calculatePriceLogic('meter')" placeholder="${isBid ? 'على السوم' : '5,000'}" ${isBid ? 'disabled' : ''} class="w-full bg-emerald-950/20 border border-emerald-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-emerald-400 font-mono disabled:opacity-60 disabled:border-amber-500/50 disabled:text-amber-400 disabled:placeholder-amber-400 disabled:cursor-not-allowed" /></div>
             
             <div>
               <div class="flex items-center justify-between mb-1">
@@ -2240,7 +2291,7 @@
                 </button>
               </div>
               <input type="hidden" id="f-is-on-bid" value="${isBid ? 'true' : 'false'}" />
-              <input type="number" id="f-price" value="${isBid ? '' : (data.price || '')}" oninput="calculatePriceLogic('total')" placeholder="${isBid ? 'على السوم' : '1850000'}" ${isBid ? 'disabled' : ''} class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white transition disabled:opacity-75 disabled:bg-amber-950/20 disabled:border-amber-500/50 disabled:text-amber-400 disabled:placeholder-amber-400 disabled:font-bold disabled:cursor-not-allowed" />
+              <input type="text" inputmode="decimal" id="f-price" value="${isBid ? '' : formatInitialNumber(data.price)}" oninput="calculatePriceLogic('total')" placeholder="${isBid ? 'على السوم' : '220,000,000'}" ${isBid ? 'disabled' : ''} class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white font-mono transition disabled:opacity-75 disabled:bg-amber-950/20 disabled:border-amber-500/50 disabled:text-amber-400 disabled:placeholder-amber-400 disabled:font-bold disabled:cursor-not-allowed" />
             </div>
             
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الأطوال (مثال: 15 في 30)</label><input type="text" id="f-dim" value="${data.dimensions || ''}" oninput="updateLiveSketchPreview()" placeholder="15 في 30" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
@@ -2274,7 +2325,7 @@
             <div class="building-field"><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">عمر العقار</label><input type="text" id="f-age" value="${data.propertyAge || ''}" placeholder="جديد" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
             <div class="building-field"><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">عدد الأدوار</label><input type="text" id="f-floors" value="${data.floors || ''}" placeholder="2" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
             
-            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الدخل الإيجاري السنوي</label><input type="number" id="f-rent" value="${data.rentIncome || ''}" oninput="calculateROI()" placeholder="120000" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
+            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الدخل الإيجاري السنوي</label><input type="text" inputmode="decimal" id="f-rent" value="${formatInitialNumber(data.rentIncome)}" oninput="calculateROI()" placeholder="12,000,000" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white font-mono" /></div>
             <div id="roi-display" class="col-span-1 md:col-span-2 lg:col-span-3 bg-emerald-500/10 border border-emerald-500/30 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-[11px] sm:text-xs text-emerald-400 font-bold hidden flex items-center"></div>
             
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">حالة العقار</label><select id="f-status" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white"><option value="متاح" ${data.status !== 'مباع' ? 'selected' : ''}>متاح</option><option value="مباع" ${data.status === 'مباع' ? 'selected' : ''}>مباع</option></select></div>
@@ -2344,8 +2395,8 @@
           ${pickerHtml}
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الميزانية القصوى (ر.س)</label><input type="number" id="f-price-max" value="${data.priceMax || ''}" placeholder="2000000" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
-            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">المساحة الدنيا (م²)</label><input type="number" id="f-area-min" value="${data.areaMin || ''}" placeholder="400" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
+            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الميزانية القصوى (ر.س)</label><input type="text" inputmode="decimal" id="f-price-max" value="${formatInitialNumber(data.priceMax)}" oninput="formatNumberInput(this)" placeholder="220,000,000" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white font-mono" /></div>
+            <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">المساحة الدنيا (م²)</label><input type="text" inputmode="decimal" id="f-area-min" value="${formatInitialNumber(data.areaMin)}" oninput="formatNumberInput(this)" placeholder="400" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white font-mono" /></div>
             
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الأطوال المطلوبة</label><input type="text" id="f-dim" value="${data.dimensions || ''}" placeholder="20 في 20" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">موعد الاحتياج</label><select id="f-urgency" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white"><option value="عاجل" ${data.urgency==='عاجل'?'selected':''}>عاجل</option><option value="خلال شهر" ${data.urgency==='خلال شهر'?'selected':''}>خلال شهر</option><option value="غير مستعجل" ${data.urgency==='غير مستعجل'?'selected':''}>غير مستعجل</option></select></div>
@@ -2365,7 +2416,7 @@
       setTimeout(() => { 
         toggleBuildingFields(); 
         if (mode === 'offer') {
-          if (isSketchEnabled) updateLiveSketchPreview();
+          if (data.showSketch === true) updateLiveSketchPreview();
           if (!data.isOnBid) calculateROI();
         }
       }, 50);
@@ -2400,10 +2451,10 @@
         payload.streetCount = document.getElementById('f-street-count').value;
         
         const widthInputs = document.querySelectorAll('.f-street-width-input');
-        payload.streetWidths = Array.from(widthInputs).map(i => i.value).filter(v => v.trim() !== '');
+        payload.streetWidths = Array.from(widthInputs).map(i => cleanNumber(i.value)).filter(v => v.trim() !== '');
 
-        payload.landArea = document.getElementById('f-area').value;
-        payload.meterPrice = (!isOnBid && document.getElementById('f-meter-price')) ? document.getElementById('f-meter-price').value : '';
+        payload.landArea = cleanNumber(document.getElementById('f-area').value);
+        payload.meterPrice = (!isOnBid && document.getElementById('f-meter-price')) ? cleanNumber(document.getElementById('f-meter-price').value) : '';
         payload.dimensions = document.getElementById('f-dim').value;
         payload.planNumber = document.getElementById('f-plan').value;
         payload.plotNumber = document.getElementById('f-plot').value;
@@ -2411,8 +2462,8 @@
         payload.bathrooms = document.getElementById('f-baths') ? document.getElementById('f-baths').value : '';
         payload.propertyAge = document.getElementById('f-age') ? document.getElementById('f-age').value : '';
         payload.floors = document.getElementById('f-floors') ? document.getElementById('f-floors').value : '';
-        payload.price = isOnBid ? '' : document.getElementById('f-price').value;
-        payload.rentIncome = document.getElementById('f-rent').value;
+        payload.price = isOnBid ? '' : cleanNumber(document.getElementById('f-price').value);
+        payload.rentIncome = cleanNumber(document.getElementById('f-rent').value);
         const p = parseFloat(payload.price || 0);
         const r = parseFloat(payload.rentIncome || 0);
         payload.roi = (!isOnBid && p > 0 && r > 0) ? ((r / p) * 100).toFixed(2) : '';
@@ -2430,8 +2481,8 @@
         payload.requestType = document.getElementById('f-req-type').value;
         payload.requestRole = document.getElementById('f-req-role').value;
         payload.districts = document.getElementById('f-districts').value;
-        payload.priceMax = document.getElementById('f-price-max').value;
-        payload.areaMin = document.getElementById('f-area-min').value;
+        payload.priceMax = cleanNumber(document.getElementById('f-price-max').value);
+        payload.areaMin = cleanNumber(document.getElementById('f-area-min').value);
         payload.dimensions = document.getElementById('f-dim').value;
         payload.urgency = document.getElementById('f-urgency').value;
         payload.paymentMethod = document.getElementById('f-payment').value;
