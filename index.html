@@ -359,6 +359,22 @@
     const IMGBB_API_KEY = '346c3e5151b4da39a9dbfef70089ef54';
 
     // ========================================================
+    // دوال مساعدات حالة السعر (محدد / على السوم / على الشور)
+    // ========================================================
+    function hasCustomPriceStatus(item) {
+      return Boolean(item.isOnBid || item.isOnShoor);
+    }
+
+    function getPriceDisplayLabel(item, fallback = 'حسب الطلب') {
+      if (item.isOnBid) return 'على السوم';
+      if (item.isOnShoor) return 'على الشور';
+      if (item.price && !isNaN(parseFloat(cleanNumber(item.price)))) {
+        return Number(cleanNumber(item.price)).toLocaleString() + ' ر.س';
+      }
+      return fallback;
+    }
+
+    // ========================================================
     // دوال تنظيف وتنسيق الأرقام الكبيرة (الملايين والمليارات)
     // ========================================================
     function cleanNumber(val) {
@@ -699,49 +715,84 @@
       previewContainer.innerHTML = generatePlotSketchSVG(tempItem, { forcePreview: true, compact: true });
     };
 
-    window.toggleOnBid = function(forceState) {
-        const hiddenInput = document.getElementById('f-is-on-bid');
-        const btn = document.getElementById('btn-toggle-bid');
+    // ========================================================
+    // التبديل بين: سعر محدد / على السوم / على الشور
+    // ========================================================
+    window.setPriceMode = function(mode) {
+        const bidInput = document.getElementById('f-is-on-bid');
+        const shoorInput = document.getElementById('f-is-on-shoor');
+        const btnBid = document.getElementById('btn-toggle-bid');
+        const btnShoor = document.getElementById('btn-toggle-shoor');
         const priceInput = document.getElementById('f-price');
         const meterPriceInput = document.getElementById('f-meter-price');
         const roiBox = document.getElementById('roi-display');
-        
-        if (!hiddenInput || !btn || !priceInput) return;
 
-        const nextState = typeof forceState === 'boolean' ? forceState : (hiddenInput.value !== 'true');
-        hiddenInput.value = nextState ? 'true' : 'false';
+        if (!bidInput || !shoorInput || !btnBid || !btnShoor || !priceInput) return;
 
-        if (nextState) {
-            btn.className = "px-2.5 py-0.5 rounded-lg text-[10px] sm:text-xs font-black transition border flex items-center gap-1 bg-amber-500 text-slate-950 border-amber-400 shadow-sm";
-            btn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i><span>على السوم</span>`;
-            
+        const currentMode = bidInput.value === 'true' ? 'bid' : (shoorInput.value === 'true' ? 'shoor' : 'exact');
+        const nextMode = (currentMode === mode) ? 'exact' : mode;
+
+        bidInput.value = (nextMode === 'bid') ? 'true' : 'false';
+        shoorInput.value = (nextMode === 'shoor') ? 'true' : 'false';
+
+        // تحديث مظهر زر "على السوم"
+        if (nextMode === 'bid') {
+            btnBid.className = "px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-black transition border flex items-center gap-1 bg-amber-500 text-slate-950 border-amber-400 shadow-sm";
+            btnBid.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i><span>على السوم</span>`;
+        } else {
+            btnBid.className = "px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-bold transition border flex items-center gap-1 bg-slate-900 text-slate-300 border-slate-700 hover:border-amber-500 hover:text-amber-400";
+            btnBid.innerHTML = `<i data-lucide="gavel" class="w-3 h-3"></i><span>على السوم</span>`;
+        }
+
+        // تحديث مظهر زر "على الشور"
+        if (nextMode === 'shoor') {
+            btnShoor.className = "px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-black transition border flex items-center gap-1 bg-sky-500 text-slate-950 border-sky-400 shadow-sm";
+            btnShoor.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i><span>على الشور</span>`;
+        } else {
+            btnShoor.className = "px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-bold transition border flex items-center gap-1 bg-slate-900 text-slate-300 border-slate-700 hover:border-sky-500 hover:text-sky-400";
+            btnShoor.innerHTML = `<i data-lucide="handshake" class="w-3 h-3"></i><span>على الشور</span>`;
+        }
+
+        if (nextMode === 'bid' || nextMode === 'shoor') {
+            const labelText = nextMode === 'bid' ? 'على السوم' : 'على الشور';
+            const disabledClasses = nextMode === 'bid'
+                ? 'disabled:opacity-75 disabled:bg-amber-950/20 disabled:border-amber-500/50 disabled:text-amber-400 disabled:placeholder-amber-400 disabled:font-bold disabled:cursor-not-allowed'
+                : 'disabled:opacity-75 disabled:bg-sky-950/20 disabled:border-sky-500/50 disabled:text-sky-400 disabled:placeholder-sky-400 disabled:font-bold disabled:cursor-not-allowed';
+
             priceInput.value = '';
             priceInput.disabled = true;
-            priceInput.placeholder = 'على السوم';
-            
+            priceInput.placeholder = labelText;
+            priceInput.className = `w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white font-mono transition ${disabledClasses}`;
+
             if (meterPriceInput) {
+                const meterDisabledClasses = nextMode === 'bid'
+                    ? 'disabled:opacity-60 disabled:border-amber-500/50 disabled:text-amber-400 disabled:placeholder-amber-400 disabled:cursor-not-allowed'
+                    : 'disabled:opacity-60 disabled:border-sky-500/50 disabled:text-sky-400 disabled:placeholder-sky-400 disabled:cursor-not-allowed';
                 meterPriceInput.value = '';
                 meterPriceInput.disabled = true;
-                meterPriceInput.placeholder = 'على السوم';
+                meterPriceInput.placeholder = labelText;
+                meterPriceInput.className = `w-full bg-emerald-950/20 border border-emerald-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-emerald-400 font-mono ${meterDisabledClasses}`;
             }
             if (roiBox) roiBox.classList.add('hidden');
         } else {
-            btn.className = "px-2.5 py-0.5 rounded-lg text-[10px] sm:text-xs font-bold transition border flex items-center gap-1 bg-slate-900 text-slate-300 border-slate-700 hover:border-amber-500 hover:text-amber-400";
-            btn.innerHTML = `<i data-lucide="gavel" class="w-3 h-3"></i><span>على السوم</span>`;
-            
             priceInput.disabled = false;
             priceInput.placeholder = '220,000,000';
-            
             if (meterPriceInput) {
                 meterPriceInput.disabled = false;
                 meterPriceInput.placeholder = '5,000';
             }
-            if (typeof forceState !== 'boolean') {
-                priceInput.focus();
-            }
+            priceInput.focus();
             if (typeof calculateROI === 'function') calculateROI();
         }
         lucide.createIcons();
+    };
+
+    window.toggleOnBid = function() {
+        window.setPriceMode('bid');
+    };
+
+    window.toggleOnShoor = function() {
+        window.setPriceMode('shoor');
     };
 
     window.toggleBuildingFields = function() {
@@ -768,8 +819,8 @@
     };
 
     window.calculatePriceLogic = function(changedField) {
-        const isOnBid = document.getElementById('f-is-on-bid')?.value === 'true';
-        if (isOnBid) return;
+        const isCustom = document.getElementById('f-is-on-bid')?.value === 'true' || document.getElementById('f-is-on-shoor')?.value === 'true';
+        if (isCustom) return;
 
         const areaInput = document.getElementById('f-area');
         const priceInput = document.getElementById('f-price');
@@ -807,10 +858,12 @@
     };
 
     // ========================================================
-    // التصميم المعماري الفاتح والمشرق للكرت التسويقي (مُصحح بالكامل لعدم قص الحروف)
+    // التصميم المعماري الفاتح والمشرق للكرت التسويقي
     // ========================================================
     function buildFlyerDOM(item, flyerElement) {
-        const priceText = item.isOnBid ? 'على السوم' : (item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'السعر حسب الطلب');
+        const priceText = getPriceDisplayLabel(item, 'السعر حسب الطلب');
+        const priceColorClass = item.isOnBid ? 'text-amber-300' : (item.isOnShoor ? 'text-sky-300' : 'text-white');
+
         let offerTypeTitle = 'عرض عقاري';
         if (item.offerType === 'بيع') offerTypeTitle = 'للبيع';
         else if (item.offerType === 'إيجار') offerTypeTitle = 'للإيجار';
@@ -962,7 +1015,7 @@
                     </div>
                   </div>
 
-                  ${(!item.isOnBid && item.propertyType === 'أرض' && item.meterPrice) ? `
+                  ${(!hasCustomPriceStatus(item) && item.propertyType === 'أرض' && item.meterPrice) ? `
                   <div class="pt-2 border-t border-[#e8dfc8] flex items-center justify-between text-base font-bold leading-normal">
                     <span class="text-slate-600">سعر المتر المربع:</span>
                     <span class="text-[#063b2d] font-black text-lg">${Number(item.meterPrice).toLocaleString()} ر.س / م²</span>
@@ -979,13 +1032,13 @@
                   <div class="bg-[#063b2d] px-6 py-3 flex items-center justify-between">
                     <div>
                       <span class="text-xs font-bold text-[#d4c49e] block leading-normal">السعر المطلوب</span>
-                      <div dir="rtl" class="text-[28px] font-black ${item.isOnBid ? 'text-amber-300' : 'text-white'} leading-normal pb-0.5">${priceText}</div>
+                      <div dir="rtl" class="text-[28px] font-black ${priceColorClass} leading-normal pb-0.5">${priceText}</div>
                     </div>
                     ${(item.rentIncome && item.rentIncome > 0) ? `
                     <div class="bg-[#042a20] border border-[#c59b43]/60 rounded-xl px-4 py-1.5 text-center">
                       <span class="text-[11px] font-bold text-[#d4c49e] block leading-normal">الدخل السنوي</span>
                       <span class="text-lg font-black text-emerald-300 block leading-normal">${Number(item.rentIncome).toLocaleString()} ر.س</span>
-                      ${(!item.isOnBid && item.roi > 0) ? `<span class="text-[11px] font-bold text-amber-300 block leading-normal">عائد ${item.roi}%</span>` : ''}
+                      ${(!hasCustomPriceStatus(item) && item.roi > 0) ? `<span class="text-[11px] font-bold text-amber-300 block leading-normal">عائد ${item.roi}%</span>` : ''}
                     </div>
                     ` : ''}
                   </div>
@@ -1254,7 +1307,21 @@
             `;
         }
 
-        const custPriceLabel = item.isOnBid ? 'على السوم' : (item.price || item.priceMax ? Number(item.price || item.priceMax).toLocaleString() + ' ر.س' : 'حسب الطلب');
+        const custPriceLabel = isOffer
+            ? getPriceDisplayLabel(item, 'حسب الطلب')
+            : (item.priceMax ? Number(item.priceMax).toLocaleString() + ' ر.س' : 'حسب الطلب');
+
+        const priceBoxClasses = item.isOnBid
+            ? 'bg-amber-50 border-amber-200'
+            : (item.isOnShoor ? 'bg-sky-50 border-sky-200' : 'bg-emerald-50 border-emerald-100');
+
+        const priceLabelColor = item.isOnBid
+            ? 'text-amber-700'
+            : (item.isOnShoor ? 'text-sky-700' : 'text-emerald-600');
+
+        const priceValueColor = item.isOnBid
+            ? 'text-amber-600'
+            : (item.isOnShoor ? 'text-sky-600' : 'text-emerald-600');
 
         container.innerHTML = `
             <header class="bg-white shadow-sm sticky top-0 z-40 border-b border-slate-200">
@@ -1279,11 +1346,11 @@
                         <p class="text-xs sm:text-sm text-slate-500 flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i> ${item.city} ${item.district ? '- ' + item.district : ''}</p>
                     </div>
                     
-                    <div class="${item.isOnBid ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-100'} border p-3 sm:p-4 rounded-xl sm:rounded-2xl md:text-left text-center flex flex-col justify-center min-w-[200px] shadow-sm">
-                        <div class="text-[11px] sm:text-sm ${item.isOnBid ? 'text-amber-700' : 'text-emerald-600'} font-bold mb-0.5 sm:mb-1">${isOffer ? 'السعر الإجمالي' : 'الميزانية القصوى'}</div>
-                        <div class="text-xl sm:text-2xl font-black ${item.isOnBid ? 'text-amber-600' : 'text-emerald-600'}">${custPriceLabel}</div>
+                    <div class="${priceBoxClasses} border p-3 sm:p-4 rounded-xl sm:rounded-2xl md:text-left text-center flex flex-col justify-center min-w-[200px] shadow-sm">
+                        <div class="text-[11px] sm:text-sm ${priceLabelColor} font-bold mb-0.5 sm:mb-1">${isOffer ? 'السعر الإجمالي' : 'الميزانية القصوى'}</div>
+                        <div class="text-xl sm:text-2xl font-black ${priceValueColor}">${custPriceLabel}</div>
                         
-                        ${isOffer && !item.isOnBid && item.propertyType === 'أرض' && item.meterPrice ? `
+                        ${isOffer && !hasCustomPriceStatus(item) && item.propertyType === 'أرض' && item.meterPrice ? `
                         <div class="mt-2 pt-2 border-t border-emerald-200 text-xs sm:text-sm font-bold text-emerald-700 flex justify-between items-center gap-4">
                             <span>سعر المتر:</span>
                             <span>${Number(item.meterPrice).toLocaleString()} ر.س</span>
@@ -1479,10 +1546,10 @@
     function updateStats() {
       const offers = items.filter(i => i.type === 'offer');
       const requests = items.filter(i => i.type === 'request');
-      const offersWithPrice = offers.filter(i => !i.isOnBid && i.price && !isNaN(parseFloat(cleanNumber(i.price))));
+      const offersWithPrice = offers.filter(i => !hasCustomPriceStatus(i) && i.price && !isNaN(parseFloat(cleanNumber(i.price))));
       
       const totalVal = offersWithPrice.reduce((sum, curr) => sum + parseFloat(cleanNumber(curr.price)), 0);
-      const roiItems = offers.filter(i => !i.isOnBid && i.roi > 0);
+      const roiItems = offers.filter(i => !hasCustomPriceStatus(i) && i.roi > 0);
       const avgRoi = roiItems.length > 0 ? (roiItems.reduce((s, c) => s + parseFloat(c.roi), 0) / roiItems.length).toFixed(1) : 0;
 
       document.getElementById('stat-offers-count').innerHTML = `${offers.length} <span class="text-[10px] sm:text-sm font-normal text-slate-500">عرض</span>`;
@@ -1648,7 +1715,9 @@
                 const popupPriceHtml = isOffer 
                     ? (item.isOnBid 
                         ? `<div class="font-black text-amber-600 text-xs sm:text-sm mb-2">على السوم</div>` 
-                        : (item.price ? `<div class="font-black text-emerald-600 text-xs sm:text-sm mb-2">${Number(item.price).toLocaleString()} ر.س</div>` : ''))
+                        : (item.isOnShoor
+                            ? `<div class="font-black text-sky-600 text-xs sm:text-sm mb-2">على الشور</div>`
+                            : (item.price ? `<div class="font-black text-emerald-600 text-xs sm:text-sm mb-2">${Number(item.price).toLocaleString()} ر.س</div>` : '')))
                     : '';
 
                 const popupContent = `
@@ -1743,7 +1812,8 @@
                 streetSummaryText += ` - عرض: ` + item.streetWidths.map(w => w + 'م').join('، ');
               }
 
-              const cardPriceText = item.isOnBid ? 'على السوم' : (item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب');
+              const cardPriceText = getPriceDisplayLabel(item, 'حسب الطلب');
+              const cardPriceColor = item.isOnBid ? 'text-amber-400' : (item.isOnShoor ? 'text-sky-400' : 'text-emerald-400');
 
               return `
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl hover:border-slate-700 transition flex flex-col group">
@@ -1771,12 +1841,12 @@
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الواجهة / الشارع:</span><span class="font-medium text-white truncate max-w-[160px] sm:max-w-[210px]">${streetSummaryText}</span></div>
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">المساحة:</span><span class="font-medium text-white">${item.landArea || '-'} م²</span></div>
                         
-                        ${!item.isOnBid && item.propertyType === 'أرض' && item.meterPrice ? `<div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">سعر المتر:</span><span class="font-bold text-emerald-400">${Number(item.meterPrice).toLocaleString()} ر.س</span></div>` : ''}
+                        ${!hasCustomPriceStatus(item) && item.propertyType === 'أرض' && item.meterPrice ? `<div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">سعر المتر:</span><span class="font-bold text-emerald-400">${Number(item.meterPrice).toLocaleString()} ر.س</span></div>` : ''}
                         
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الأطوال:</span><span class="font-medium text-white">${item.dimensions || '-'}</span></div>
                         ${item.propertyType === 'أرض' ? '' : `<div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الغرف / المياه:</span><span class="font-medium text-white">${item.rooms || '-'}غ • ${item.bathrooms || '-'}ح</span></div>`}
-                        ${!item.isOnBid && item.roi > 0 ? `<div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">العائد:</span><span class="font-bold text-emerald-400">${item.roi}%</span></div>` : ''}
-                        <div class="flex items-center justify-between pt-2"><span class="text-slate-500 text-[10px] sm:text-xs">السعر الإجمالي:</span><span class="text-lg sm:text-xl font-black ${item.isOnBid ? 'text-amber-400' : 'text-emerald-400'}">${cardPriceText}</span></div>
+                        ${!hasCustomPriceStatus(item) && item.roi > 0 ? `<div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">العائد:</span><span class="font-bold text-emerald-400">${item.roi}%</span></div>` : ''}
+                        <div class="flex items-center justify-between pt-2"><span class="text-slate-500 text-[10px] sm:text-xs">السعر الإجمالي:</span><span class="text-lg sm:text-xl font-black ${cardPriceColor}">${cardPriceText}</span></div>
                       ` : `
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الأحياء:</span><span class="font-medium text-white truncate max-w-[150px] sm:max-w-[200px]">${item.districts || 'الكل'}</span></div>
                         <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-500">الميزانية:</span><span class="font-bold text-emerald-400">${item.priceMax ? Number(item.priceMax).toLocaleString() + ' ر.س' : 'غير محدد'}</span></div>
@@ -1873,14 +1943,15 @@
           fullStreetStr += ` - عرض الشوارع: ` + item.streetWidths.map(w => w + 'م').join('، ');
         }
 
-        const detailPriceText = item.isOnBid ? 'على السوم' : (item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب');
+        const detailPriceText = getPriceDisplayLabel(item, 'حسب الطلب');
+        const detailPriceColor = item.isOnBid ? 'text-amber-400' : (item.isOnShoor ? 'text-sky-400' : 'text-emerald-400');
         const sketchSvg = generatePlotSketchSVG(item);
 
         contentGridHtml = `
           <div class="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">نوع العملية</div><div class="text-xs sm:text-base font-black text-white">${item.offerType || 'بيع'}</div></div>
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">حالة العقار</div><div class="text-xs sm:text-base font-black text-emerald-400">${item.status || 'متاح'}</div></div>
-            <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800 col-span-2 md:col-span-1"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">السعر الإجمالي</div><div class="text-sm sm:text-base font-black ${item.isOnBid ? 'text-amber-400' : 'text-emerald-400'}">${detailPriceText}</div></div>
+            <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800 col-span-2 md:col-span-1"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">السعر الإجمالي</div><div class="text-sm sm:text-base font-black ${detailPriceColor}">${detailPriceText}</div></div>
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">المدينة / الحي</div><div class="text-xs sm:text-base font-bold text-white">${item.city} - ${item.district || '-'}</div></div>
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">الواجهة</div><div class="text-xs sm:text-base font-bold text-emerald-400">${item.facing || '-'}</div></div>
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">الأطوال</div><div class="text-xs sm:text-base font-bold text-white">${item.dimensions || '-'}</div></div>
@@ -1888,12 +1959,12 @@
             
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">${item.propertyType === 'أرض' ? 'المساحة' : 'المساحة والأدوار'}</div><div class="text-xs sm:text-base font-bold text-white">${item.landArea || '-'} م² ${item.propertyType !== 'أرض' ? '• ' + (item.floors || '-') + ' أدوار' : ''}</div></div>
             
-            ${!item.isOnBid && item.propertyType === 'أرض' && item.meterPrice ? `<div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">سعر المتر</div><div class="text-xs sm:text-base font-bold text-emerald-400">${Number(item.meterPrice).toLocaleString()} ر.س</div></div>` : ''}
+            ${!hasCustomPriceStatus(item) && item.propertyType === 'أرض' && item.meterPrice ? `<div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">سعر المتر</div><div class="text-xs sm:text-base font-bold text-emerald-400">${Number(item.meterPrice).toLocaleString()} ر.س</div></div>` : ''}
 
             ${item.propertyType !== 'أرض' ? `<div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">الغرف ودورات المياه</div><div class="text-xs sm:text-base font-bold text-white">${item.rooms || '-'} غرف • ${item.bathrooms || '-'} حمامات</div></div>` : ''}
             ${item.propertyType !== 'أرض' ? `<div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">عمر العقار</div><div class="text-xs sm:text-base font-bold text-white">${item.propertyAge || '-'}</div></div>` : ''}
             
-            <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">العائد الاستثماري</div><div class="text-xs sm:text-base font-bold text-emerald-400">${!item.isOnBid && item.roi ? item.roi + '%' : '-'}</div></div>
+            <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">العائد الاستثماري</div><div class="text-xs sm:text-base font-bold text-emerald-400">${!hasCustomPriceStatus(item) && item.roi ? item.roi + '%' : '-'}</div></div>
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">رقم المخطط/القطعة</div><div class="text-xs sm:text-base font-bold text-white">${item.planNumber || '-'} / ${item.plotNumber || '-'}</div></div>
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">حالة الصك ورقمها</div><div class="text-xs sm:text-base font-bold text-white">${item.deedType || '-'} (${item.deedNumber || '-'})</div></div>
             <div class="bg-slate-950 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800"><div class="text-[10px] sm:text-xs text-slate-400 mb-1">قابل للتفاوض</div><div class="text-xs sm:text-base font-bold text-white">${item.isNegotiable || 'نعم'}</div></div>
@@ -2070,9 +2141,9 @@
     }
 
     function calculateROI() {
-      const isOnBid = document.getElementById('f-is-on-bid')?.value === 'true';
+      const isCustom = document.getElementById('f-is-on-bid')?.value === 'true' || document.getElementById('f-is-on-shoor')?.value === 'true';
       const roiBox = document.getElementById('roi-display');
-      if (isOnBid) {
+      if (isCustom) {
         if(roiBox) roiBox.classList.add('hidden');
         return;
       }
@@ -2239,7 +2310,22 @@
         if(bReq) bReq.className = "flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition bg-slate-950 text-slate-400 border border-slate-800";
         
         const isBid = Boolean(data.isOnBid);
+        const isShoor = !isBid && Boolean(data.isOnShoor);
+        const isCustomPrice = isBid || isShoor;
+        const customLabel = isBid ? 'على السوم' : (isShoor ? 'على الشور' : '');
         const isSketchEnabled = data.showSketch === true;
+
+        const priceInputClasses = isBid
+          ? 'w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white font-mono transition disabled:opacity-75 disabled:bg-amber-950/20 disabled:border-amber-500/50 disabled:text-amber-400 disabled:placeholder-amber-400 disabled:font-bold disabled:cursor-not-allowed'
+          : (isShoor
+              ? 'w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white font-mono transition disabled:opacity-75 disabled:bg-sky-950/20 disabled:border-sky-500/50 disabled:text-sky-400 disabled:placeholder-sky-400 disabled:font-bold disabled:cursor-not-allowed'
+              : 'w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white font-mono transition');
+
+        const meterInputClasses = isBid
+          ? 'w-full bg-emerald-950/20 border border-emerald-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-emerald-400 font-mono disabled:opacity-60 disabled:border-amber-500/50 disabled:text-amber-400 disabled:placeholder-amber-400 disabled:cursor-not-allowed'
+          : (isShoor
+              ? 'w-full bg-emerald-950/20 border border-emerald-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-emerald-400 font-mono disabled:opacity-60 disabled:border-sky-500/50 disabled:text-sky-400 disabled:placeholder-sky-400 disabled:cursor-not-allowed'
+              : 'w-full bg-emerald-950/20 border border-emerald-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-emerald-400 font-mono');
 
         fields.innerHTML = `
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -2280,18 +2366,25 @@
             </div>
             
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">مساحة الأرض (م²)</label><input type="text" inputmode="decimal" id="f-area" value="${formatInitialNumber(data.landArea)}" oninput="calculatePriceLogic('area'); updateLiveSketchPreview();" placeholder="450" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white font-mono" /></div>
-            <div class="land-field" style="display:none;"><label class="block text-[11px] sm:text-xs font-bold text-emerald-400 mb-1">سعر المتر (ر.س)</label><input type="text" inputmode="decimal" id="f-meter-price" value="${isBid ? '' : formatInitialNumber(data.meterPrice)}" oninput="calculatePriceLogic('meter')" placeholder="${isBid ? 'على السوم' : '5,000'}" ${isBid ? 'disabled' : ''} class="w-full bg-emerald-950/20 border border-emerald-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-emerald-400 font-mono disabled:opacity-60 disabled:border-amber-500/50 disabled:text-amber-400 disabled:placeholder-amber-400 disabled:cursor-not-allowed" /></div>
+            <div class="land-field" style="display:none;"><label class="block text-[11px] sm:text-xs font-bold text-emerald-400 mb-1">سعر المتر (ر.س)</label><input type="text" inputmode="decimal" id="f-meter-price" value="${isCustomPrice ? '' : formatInitialNumber(data.meterPrice)}" oninput="calculatePriceLogic('meter')" placeholder="${isCustomPrice ? customLabel : '5,000'}" ${isCustomPrice ? 'disabled' : ''} class="${meterInputClasses}" /></div>
             
             <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="text-[11px] sm:text-xs font-bold text-slate-400">السعر الإجمالي (ر.س)</label>
-                <button type="button" id="btn-toggle-bid" onclick="toggleOnBid()" class="px-2.5 py-0.5 rounded-lg text-[10px] sm:text-xs font-bold transition border flex items-center gap-1 ${isBid ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm font-black' : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-amber-500 hover:text-amber-400'}">
-                  <i data-lucide="${isBid ? 'check' : 'gavel'}" class="w-3 h-3"></i>
-                  <span>على السوم</span>
-                </button>
+              <div class="flex items-center justify-between gap-1 mb-1">
+                <label class="text-[11px] sm:text-xs font-bold text-slate-400">السعر الإجمالي</label>
+                <div class="flex items-center gap-1">
+                  <button type="button" id="btn-toggle-bid" onclick="toggleOnBid()" class="px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-bold transition border flex items-center gap-1 ${isBid ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm font-black' : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-amber-500 hover:text-amber-400'}">
+                    <i data-lucide="${isBid ? 'check' : 'gavel'}" class="w-3 h-3"></i>
+                    <span>على السوم</span>
+                  </button>
+                  <button type="button" id="btn-toggle-shoor" onclick="toggleOnShoor()" class="px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-bold transition border flex items-center gap-1 ${isShoor ? 'bg-sky-500 text-slate-950 border-sky-400 shadow-sm font-black' : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-sky-500 hover:text-sky-400'}">
+                    <i data-lucide="${isShoor ? 'check' : 'handshake'}" class="w-3 h-3"></i>
+                    <span>على الشور</span>
+                  </button>
+                </div>
               </div>
               <input type="hidden" id="f-is-on-bid" value="${isBid ? 'true' : 'false'}" />
-              <input type="text" inputmode="decimal" id="f-price" value="${isBid ? '' : formatInitialNumber(data.price)}" oninput="calculatePriceLogic('total')" placeholder="${isBid ? 'على السوم' : '220,000,000'}" ${isBid ? 'disabled' : ''} class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white font-mono transition disabled:opacity-75 disabled:bg-amber-950/20 disabled:border-amber-500/50 disabled:text-amber-400 disabled:placeholder-amber-400 disabled:font-bold disabled:cursor-not-allowed" />
+              <input type="hidden" id="f-is-on-shoor" value="${isShoor ? 'true' : 'false'}" />
+              <input type="text" inputmode="decimal" id="f-price" value="${isCustomPrice ? '' : formatInitialNumber(data.price)}" oninput="calculatePriceLogic('total')" placeholder="${isCustomPrice ? customLabel : '220,000,000'}" ${isCustomPrice ? 'disabled' : ''} class="${priceInputClasses}" />
             </div>
             
             <div><label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">الأطوال (مثال: 15 في 30)</label><input type="text" id="f-dim" value="${data.dimensions || ''}" oninput="updateLiveSketchPreview()" placeholder="15 في 30" class="w-full bg-slate-950 border border-slate-700 p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm text-white" /></div>
@@ -2417,7 +2510,7 @@
         toggleBuildingFields(); 
         if (mode === 'offer') {
           if (data.showSketch === true) updateLiveSketchPreview();
-          if (!data.isOnBid) calculateROI();
+          if (!data.isOnBid && !data.isOnShoor) calculateROI();
         }
       }, 50);
     }
@@ -2441,7 +2534,11 @@
 
       if (addMode === 'offer') {
         const isOnBid = document.getElementById('f-is-on-bid')?.value === 'true';
+        const isOnShoor = !isOnBid && (document.getElementById('f-is-on-shoor')?.value === 'true');
+        const isCustomPrice = isOnBid || isOnShoor;
+
         payload.isOnBid = isOnBid;
+        payload.isOnShoor = isOnShoor;
         payload.showSketch = document.getElementById('f-show-sketch') ? document.getElementById('f-show-sketch').checked : false;
         payload.offerType = document.getElementById('f-offer-type').value;
         payload.ownerRole = document.getElementById('f-owner-role').value;
@@ -2454,7 +2551,7 @@
         payload.streetWidths = Array.from(widthInputs).map(i => cleanNumber(i.value)).filter(v => v.trim() !== '');
 
         payload.landArea = cleanNumber(document.getElementById('f-area').value);
-        payload.meterPrice = (!isOnBid && document.getElementById('f-meter-price')) ? cleanNumber(document.getElementById('f-meter-price').value) : '';
+        payload.meterPrice = (!isCustomPrice && document.getElementById('f-meter-price')) ? cleanNumber(document.getElementById('f-meter-price').value) : '';
         payload.dimensions = document.getElementById('f-dim').value;
         payload.planNumber = document.getElementById('f-plan').value;
         payload.plotNumber = document.getElementById('f-plot').value;
@@ -2462,11 +2559,11 @@
         payload.bathrooms = document.getElementById('f-baths') ? document.getElementById('f-baths').value : '';
         payload.propertyAge = document.getElementById('f-age') ? document.getElementById('f-age').value : '';
         payload.floors = document.getElementById('f-floors') ? document.getElementById('f-floors').value : '';
-        payload.price = isOnBid ? '' : cleanNumber(document.getElementById('f-price').value);
+        payload.price = isCustomPrice ? '' : cleanNumber(document.getElementById('f-price').value);
         payload.rentIncome = cleanNumber(document.getElementById('f-rent').value);
         const p = parseFloat(payload.price || 0);
         const r = parseFloat(payload.rentIncome || 0);
-        payload.roi = (!isOnBid && p > 0 && r > 0) ? ((r / p) * 100).toFixed(2) : '';
+        payload.roi = (!isCustomPrice && p > 0 && r > 0) ? ((r / p) * 100).toFixed(2) : '';
         payload.status = document.getElementById('f-status').value;
         payload.isNegotiable = document.getElementById('f-nego').value;
         payload.deedType = document.getElementById('f-deed-type').value;
@@ -2540,7 +2637,7 @@
           streetDetailsStr += ` - عرض الشوارع: ` + item.streetWidths.map(w => w + 'م').join('، ');
         }
 
-        const sharePriceStr = item.isOnBid ? 'على السوم' : (item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب');
+        const sharePriceStr = getPriceDisplayLabel(item, 'حسب الطلب');
 
         text = `عرض عقاري - TM PLUS\n\n` +
                `المرجع: ${item.id}\n` +
@@ -2551,7 +2648,7 @@
                `الشارع: ${streetDetailsStr}\n` +
                `المساحة: ${item.landArea || '-'} م²\n` +
                (item.dimensions ? `الأطوال: ${item.dimensions}\n` : '') +
-               (!item.isOnBid && item.meterPrice ? `سعر المتر: ${Number(item.meterPrice).toLocaleString()} ر.س\n` : '') +
+               (!hasCustomPriceStatus(item) && item.meterPrice ? `سعر المتر: ${Number(item.meterPrice).toLocaleString()} ر.س\n` : '') +
                `السعر: ${sharePriceStr}\n` +
                (item.mapUrl ? `الخريطة: ${item.mapUrl}\n` : '') +
                `\nللتواصل: ${item.ownerName} - ${item.phone}`;
@@ -2599,7 +2696,8 @@
           streetDetailsStr += ` - عرض الشوارع: ` + item.streetWidths.map(w => w + 'م').join('، ');
         }
 
-        const pdfPriceStr = item.isOnBid ? 'على السوم' : (item.price ? Number(item.price).toLocaleString() + ' ر.س' : 'حسب الطلب');
+        const pdfPriceStr = getPriceDisplayLabel(item, 'حسب الطلب');
+        const pdfPriceStyle = item.isOnBid ? 'color:#d97706;' : (item.isOnShoor ? 'color:#0284c7;' : '');
         const sketchSvg = generatePlotSketchSVG(item);
         if (sketchSvg) {
           sketchPdfHtml = `
@@ -2617,16 +2715,16 @@
           <div class="box"><div class="label">المساحة</div><div class="value">${item.landArea || '-'} م²</div></div>
           <div class="box"><div class="label">الواجهة (التوجيه)</div><div class="value" style="color:#059669;">${item.facing || '-'}</div></div>
           
-          ${!item.isOnBid && item.propertyType === 'أرض' && item.meterPrice ? `<div class="box"><div class="label">سعر المتر</div><div class="value" style="color:#10b981;">${Number(item.meterPrice).toLocaleString()} ر.س</div></div>` : ''}
+          ${!hasCustomPriceStatus(item) && item.propertyType === 'أرض' && item.meterPrice ? `<div class="box"><div class="label">سعر المتر</div><div class="value" style="color:#10b981;">${Number(item.meterPrice).toLocaleString()} ر.س</div></div>` : ''}
 
           <div class="box"><div class="label">الأطوال</div><div class="value">${item.dimensions || '-'}</div></div>
           <div class="box" style="grid-column: span 2;"><div class="label">الشارع وتفاصيل العرض</div><div class="value">${streetDetailsStr}</div></div>
-          <div class="box"><div class="label">السعر الإجمالي</div><div class="value" style="${item.isOnBid ? 'color:#d97706;' : ''}">${pdfPriceStr}</div></div>
+          <div class="box"><div class="label">السعر الإجمالي</div><div class="value" style="${pdfPriceStyle}">${pdfPriceStr}</div></div>
           
           ${item.propertyType !== 'أرض' ? `<div class="box"><div class="label">عمر العقار</div><div class="value">${item.propertyAge || '-'}</div></div>` : ''}
           ${item.propertyType !== 'أرض' ? `<div class="box"><div class="label">الغرف / دورات المياه</div><div class="value">${item.rooms || '-'} غرف / ${item.bathrooms || '-'} حمامات</div></div>` : ''}
           ${item.rentIncome ? `<div class="box"><div class="label">الدخل الإيجاري</div><div class="value">${Number(item.rentIncome).toLocaleString()} ر.س</div></div>` : ''}
-          ${!item.isOnBid && item.roi ? `<div class="box"><div class="label">العائد الاستثماري</div><div class="value" style="color:#10b981;">${item.roi}% سنوياً</div></div>` : ''}
+          ${!hasCustomPriceStatus(item) && item.roi ? `<div class="box"><div class="label">العائد الاستثماري</div><div class="value" style="color:#10b981;">${item.roi}% سنوياً</div></div>` : ''}
           ${item.mapUrl ? `<div class="box" style="grid-column: span 2;"><div class="label">رابط الموقع (خريطة جوجل)</div><div class="value"><a href="${item.mapUrl}" target="_blank" style="color: #10b981; text-decoration: none; word-break: break-all; font-size: 15px;">${item.mapUrl}</a></div></div>` : ''}
           ${item.lat && item.lng ? `<div class="box" style="grid-column: span 2;"><div class="label">إحداثيات الموقع</div><div class="value"><a href="https://maps.google.com/?q=${item.lat},${item.lng}" target="_blank" style="color: #10b981; text-decoration: none; word-break: break-all; font-size: 15px;">${item.lat}, ${item.lng}</a></div></div>` : ''}
           ${item.otherFeatures ? `<div class="box" style="grid-column: span 2;"><div class="label">مميزات إضافية</div><div class="value">${item.otherFeatures}</div></div>` : ''}
