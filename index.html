@@ -1314,12 +1314,18 @@
       if (links.length > 15 && !confirm(`سيتم فتح ${links.length} تبويب في المتصفح، هل تود المتابعة؟`)) {
         return;
       }
-      links.forEach((a, index) => {
-        setTimeout(() => {
-          window.open(a.href, '_blank');
-        }, index * 250);
+
+      let openedCount = 0;
+      links.forEach((a) => {
+        const win = window.open(a.href, '_blank');
+        if (win) openedCount++;
       });
-      showToast(`جاري فتح ${links.length} رابط... (تأكد من السماح للنوافذ المنبثقة في المتصفح)`);
+
+      if (openedCount < links.length) {
+        alert(`المتصفح حظر فتح باقي التبويبات (فتح ${openedCount} من ${links.length}).\n\nلحلها نهائياً: اضغط على أيقونة "حظر النوافذ المنبثقة" في شريط العنوان بالأعلى واختر "السماح دائماً" (Always allow).`);
+      } else {
+        showToast(`تم فتح ${openedCount} رابط بنجاح!`);
+      }
     }
     window.openAllCustomerLinksInTabs = openAllCustomerLinksInTabs;
 
