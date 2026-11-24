@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -188,6 +189,9 @@
         <button onclick="setViewMode('grid')" id="btn-grid" class="flex-1 sm:flex-none flex justify-center p-2 sm:p-2.5 rounded-md sm:rounded-lg transition bg-slate-800 text-emerald-400 shadow-sm" title="عرض كقائمة"><i data-lucide="layout-grid" class="w-4 h-4"></i></button>
         <button onclick="setViewMode('map')" id="btn-map" class="flex-1 sm:flex-none flex justify-center p-2 sm:p-2.5 rounded-md sm:rounded-lg transition text-slate-500 hover:text-slate-300" title="عرض الخريطة"><i data-lucide="map-pin" class="w-4 h-4"></i></button>
         <div class="w-px h-6 bg-slate-800 mx-1"></div>
+        <button onclick="openAllCustomerLinksModal()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 p-2 sm:p-2.5 px-3 sm:px-4 rounded-md sm:rounded-lg transition bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-sm text-[10px] sm:text-xs font-bold whitespace-nowrap" title="عرض ونسخ كل روابط العملاء">
+          <i data-lucide="link" class="w-4 h-4"></i> <span>روابط العملاء</span>
+        </button>
         <button onclick="downloadAllFlyers()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 p-2 sm:p-2.5 px-3 sm:px-4 rounded-md sm:rounded-lg transition bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white shadow-sm text-[10px] sm:text-xs font-bold whitespace-nowrap" title="تحميل كل العروض كصور ZIP">
           <i data-lucide="images" class="w-4 h-4"></i> <span class="hidden sm:inline">تحميل كـ ZIP</span>
         </button>
@@ -235,6 +239,27 @@
         <button onclick="closeDetailModal()" class="text-slate-400 hover:text-white p-1.5 sm:p-2 rounded-xl hover:bg-slate-800 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div id="detail-modal-body" class="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6 flex-1"></div>
+    </div>
+  </div>
+
+  <!-- نافذة جميع روابط العملاء -->
+  <div id="all-links-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto hidden">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+      <div class="p-3 sm:p-4 bg-slate-950 border-b border-slate-800 flex justify-between items-center shrink-0 gap-2">
+        <div class="flex items-center gap-2">
+          <i data-lucide="link" class="w-5 h-5 text-sky-400 shrink-0"></i>
+          <h3 class="text-xs sm:text-base font-black text-white">جميع روابط العملاء (<span id="all-links-count">0</span>)</h3>
+        </div>
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <button onclick="copyAllCustomerLinks()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition shadow">
+            <i data-lucide="copy" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i> نسخ القائمة كاملة
+          </button>
+          <button onclick="closeAllCustomerLinksModal()" class="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <div id="all-links-body" class="p-3 sm:p-4 overflow-y-auto space-y-2.5 flex-1"></div>
     </div>
   </div>
 
@@ -335,6 +360,7 @@
     let unsubscribeSnapshot = null;
     let appNotifications = [];
     let isInitialLoad = true;
+    let currentGeneratedLinksText = '';
     
     let pickerMap = null;
     let pickerMarker = null;
@@ -884,7 +910,7 @@
     };
 
     // ========================================================
-    // التصميم المعماري الفاتح والمشرق للكرت التسويقي (معدل لمنع قص نص المميزات)
+    // التصميم المعماري الفاتح والمشرق للكرت التسويقي
     // ========================================================
     function buildFlyerDOM(item, flyerElement) {
         const priceText = getPriceDisplayLabel(item, 'السعر حسب الطلب');
@@ -1014,7 +1040,7 @@
                   </h2>
                 </div>
 
-                <!-- بطاقة المواصفات بالأيقونات (بدون line-clamp لمنع قص النص من الأسفل) -->
+                <!-- بطاقة المواصفات بالأيقونات -->
                 <div class="bg-[#fdfcf9] border-2 border-[#d4c49e] rounded-[20px] px-5 py-3 shadow-sm flex-1 min-h-0 flex flex-col justify-between gap-2">
                   <div class="grid grid-cols-2 gap-x-3 gap-y-2 my-auto">
                     <div class="flex items-start gap-2.5">
@@ -1206,6 +1232,106 @@
       });
     }
     window.generateFlyerImage = generateFlyerImage;
+
+    // ========================================================
+    // عرض ونسخ جميع روابط العملاء في مكان واحد
+    // ========================================================
+    function openAllCustomerLinksModal() {
+      const filteredItems = items.filter(item => {
+        let matchTab = true;
+        if (activeTab === 'offers') matchTab = item.type === 'offer';
+        if (activeTab === 'requests') matchTab = item.type === 'request';
+        if (activeTab === 'favorites') matchTab = item.isFavorite;
+        if (activeTab === 'my_ads') matchTab = item.isMine;
+        if (activeTab === 'matches') matchTab = getMatches(item).length > 0;
+        return matchTab && matchesCurrentFilters(item);
+      });
+
+      const countEl = document.getElementById('all-links-count');
+      const bodyEl = document.getElementById('all-links-body');
+      const modalEl = document.getElementById('all-links-modal');
+
+      countEl.innerText = filteredItems.length;
+
+      if (filteredItems.length === 0) {
+        bodyEl.innerHTML = `<div class="text-center py-12 text-slate-500 font-bold text-sm">لا توجد إعلانات في القائمة الحالية</div>`;
+        currentGeneratedLinksText = '';
+        modalEl.classList.remove('hidden');
+        lucide.createIcons();
+        return;
+      }
+
+      const baseUrl = window.location.origin + window.location.pathname;
+      let textList = [];
+
+      bodyEl.innerHTML = filteredItems.map((item, idx) => {
+        const url = `${baseUrl}?viewOffer=${item.id_doc}`;
+        const title = item.type === 'offer'
+          ? `${item.propertyType} ${item.offerType || 'بيع'} - ${item.city}${item.district ? ' (حي ' + item.district + ')' : ''}`
+          : `طلب ${item.propertyType} - ${item.city}`;
+        const priceLabel = item.type === 'offer'
+          ? getPriceDisplayLabel(item, 'حسب الطلب')
+          : (item.priceMax ? Number(item.priceMax).toLocaleString() + ' ر.س' : 'غير محدد');
+
+        textList.push(`${idx + 1}. *${title}* (${item.id})\nالسعر: ${priceLabel}\nالرابط: ${url}`);
+
+        return `
+          <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-700 transition">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">${item.id}</span>
+                <span class="text-xs sm:text-sm font-bold text-white truncate">${title}</span>
+              </div>
+              <div class="text-[11px] text-emerald-400 font-bold mb-1">${priceLabel}</div>
+              <div class="text-[11px] text-slate-400 font-mono truncate text-left" dir="ltr">${url}</div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0 justify-end">
+              <button onclick="copyCustomerLink('${item.id_doc}')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-sky-400 rounded-lg text-xs font-bold flex items-center gap-1 transition">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> نسخ
+              </button>
+              <a href="${url}" target="_blank" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition" title="معاينة الصفحة">
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      currentGeneratedLinksText = textList.join('\n\n');
+      modalEl.classList.remove('hidden');
+      lucide.createIcons();
+    }
+    window.openAllCustomerLinksModal = openAllCustomerLinksModal;
+
+    function closeAllCustomerLinksModal() {
+      document.getElementById('all-links-modal').classList.add('hidden');
+    }
+    window.closeAllCustomerLinksModal = closeAllCustomerLinksModal;
+
+    function copyAllCustomerLinks() {
+      if (!currentGeneratedLinksText) {
+        showToast('لا توجد روابط لنسخها');
+        return;
+      }
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(currentGeneratedLinksText).then(() => {
+          showToast('تم نسخ جميع الروابط والتفاصيل بنجاح!');
+        }).catch(() => fallbackCopyText(currentGeneratedLinksText));
+      } else {
+        fallbackCopyText(currentGeneratedLinksText);
+      }
+    }
+    window.copyAllCustomerLinks = copyAllCustomerLinks;
+
+    function fallbackCopyText(text) {
+      const tmp = document.createElement('textarea');
+      tmp.value = text;
+      document.body.appendChild(tmp);
+      tmp.select();
+      document.execCommand('copy');
+      document.body.removeChild(tmp);
+      showToast('تم نسخ جميع الروابط والتفاصيل بنجاح!');
+    }
 
     async function loadCustomerView(docId) {
         const container = document.getElementById('customer-view-container');
