@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -251,6 +250,9 @@
           <h3 class="text-xs sm:text-base font-black text-white">جميع روابط العملاء (<span id="all-links-count">0</span>)</h3>
         </div>
         <div class="flex items-center gap-1.5 sm:gap-2">
+          <button onclick="openAllCustomerLinksInTabs()" class="bg-purple-600 hover:bg-purple-500 text-white px-3 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition shadow">
+            <i data-lucide="external-link" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i> فتح الكل
+          </button>
           <button onclick="copyAllCustomerLinks()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition shadow">
             <i data-lucide="copy" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i> نسخ القائمة كاملة
           </button>
@@ -1234,7 +1236,7 @@
     window.generateFlyerImage = generateFlyerImage;
 
     // ========================================================
-    // عرض ونسخ جميع روابط العملاء في مكان واحد
+    // عرض ونسخ وفتح جميع روابط العملاء في مكان واحد
     // ========================================================
     function openAllCustomerLinksModal() {
       const filteredItems = items.filter(item => {
@@ -1302,6 +1304,24 @@
       lucide.createIcons();
     }
     window.openAllCustomerLinksModal = openAllCustomerLinksModal;
+
+    function openAllCustomerLinksInTabs() {
+      const links = document.querySelectorAll('#all-links-body a[target="_blank"]');
+      if (links.length === 0) {
+        showToast('لا توجد روابط لفتحها');
+        return;
+      }
+      if (links.length > 15 && !confirm(`سيتم فتح ${links.length} تبويب في المتصفح، هل تود المتابعة؟`)) {
+        return;
+      }
+      links.forEach((a, index) => {
+        setTimeout(() => {
+          window.open(a.href, '_blank');
+        }, index * 250);
+      });
+      showToast(`جاري فتح ${links.length} رابط... (تأكد من السماح للنوافذ المنبثقة في المتصفح)`);
+    }
+    window.openAllCustomerLinksInTabs = openAllCustomerLinksInTabs;
 
     function closeAllCustomerLinksModal() {
       document.getElementById('all-links-modal').classList.add('hidden');
@@ -2950,5 +2970,3 @@
   </script>
 </body>
 </html>
-
-```
